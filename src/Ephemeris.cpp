@@ -1164,7 +1164,7 @@ namespace ephem {
       Assert(derivs.nrows()==3 && derivs.ncols()==6);
     }
 
-    derivs = 0.;
+    derivs.setZero();
     double dT = t-t0;
     derivs(0,0) = 1.;
     derivs(0,3) = dT;
@@ -1553,7 +1553,7 @@ zenith_horizon(int obscode) {
     longitudeOfAscendingNode *= DEGREE;
     argumentOfPerifocus *= DEGREE;
     meanAnomaly *= DEGREE;
-    return (is);
+    return static_cast<bool>(is);
   }
 
   void
