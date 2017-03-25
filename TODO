@@ -9,3 +9,10 @@ PhotoMatch gets moved into gbdes & matched with Match
 
 Have a WCSFit/PhotoFit flag for just dumping alpha structure?
 
+Make Eigen/TMV compatible, using new gbutils:
+AlphaUpdater.h		PixelMap.h		TemplateMap.h
+PixelMapCollection.h	Wcs.h
+Ephemeris.h		PiecewiseMap.h		PolyMap.h		YAMLCollector.h
+AlphaUpdater.cpp	PiecewiseMap.cpp	PolyMap.cpp		Wcs.cpp
+PixelMap.cpp		SubMap.cpp		YAMLCollector.cpp
+Ephemeris.cpp		PixelMapCollection.cpp	TemplateMap.cpp

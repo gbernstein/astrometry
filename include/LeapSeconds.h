@@ -16,6 +16,8 @@ namespace astrometry {
     static std::vector<double> dT;
     static bool initialized=false;
     if (!initialized) {
+      leapJD.push_back(2457754.5); dT.push_back(37.0);	//Jan 1  2017
+      leapJD.push_back(2457204.5); dT.push_back(36.0);	//Jun 30 2015
       leapJD.push_back(2456109.5); dT.push_back(35.0);	//Jun 30 2012
       leapJD.push_back(2454832.5); dT.push_back(34.0);	//Jan 1 2009
       leapJD.push_back(2453736.5); dT.push_back(33.0);	//Jan 1 2006

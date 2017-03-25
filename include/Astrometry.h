@@ -3,23 +3,24 @@
 #define ASTROMETRY_H
 
 #include "Std.h"
-#include "UseTMV.h"
+#include "LinearAlgebra.h"
 #include "AstronomicalConstants.h"
 #include "yaml-cpp/yaml.h"
 #include <iostream>
 #include <string>
 #include <stdexcept>
 
-#include "TMV_Small.h"
-typedef tmv::SmallVector<double,2> Vector2;
-typedef tmv::SmallVector<double,3> Vector3;
-typedef tmv::SmallMatrix<double,2,2> Matrix22;
-typedef tmv::SmallMatrix<double,2,3> Matrix23;
-typedef tmv::SmallMatrix<double,3,2> Matrix32;
-typedef tmv::SmallMatrix<double,3,3> Matrix33;
-
 namespace astrometry {
 
+  typedef linalg::SVector<double,2> Vector2;
+  typedef linalg::SVector<double,3> Vector3;
+  typedef linalg::SMatrix<double,2,2> Matrix22;
+  typedef linalg::SMatrix<double,2,3> Matrix23;
+  typedef linalg::SMatrix<double,3,2> Matrix32;
+  typedef linalg::SMatrix<double,3,3> Matrix33;
+  typedef linalg::Matrix<double> DMatrix;
+  typedef linalg::Vector<double> DVector;
+  
   class AstrometryError: public std::runtime_error {
   public:
     AstrometryError(const string &m=""): 
@@ -56,7 +57,6 @@ namespace astrometry {
     void buildJD();
     void buildYMD() const;
   public:
-    // ??? Add validation of date specs to below???
     UT(): jd(0.), ymdValid(false) {}
     UT(double jd_) {set(jd_);}
     UT(int y_, int m_, double d_) {set(y_,m_,d_);}
@@ -92,7 +92,6 @@ namespace astrometry {
 
     void writeYMD(std::ostream& os) const;
     void writeYMDHMS(std::ostream& os) const;
-    // ??? writeMPC(std::ostream& os);
     void read(std::istream& is);
     friend std::ostream& operator<<(std::ostream& os, const UT& rhs);
     friend std::istream& operator>>(std::istream& is, UT& rhs);

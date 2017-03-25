@@ -1,69 +1,129 @@
-# These should come from environment:
+# Makefile for Astrometry package.
+# The only executables to be made are the tests, there are no "subs"
+# 
+# These site-dependent items should be defined in environment:
+
 # CXX
-# OPTFLAGS
+# CXXFLAGS
 
-# TMV_DIR
+# TMV_DIR -or- EIGEN_DIR
+# GBUTILS_DIR
 # YAML_DIR
-# MKL_DIR (optionally)
-# It is assumed that the gbtools/utilities/ directory is at ../utilities 
+# MKL_DIR (optional, used w/EIGEN)
 
-export CXX
-export OPTFLAGS
+INCLUDES := 
 
-# ABS_INCLUDES are absolute paths 
-ABS_INCLUDES = -I $(TMV_DIR)/include -I $(YAML_DIR)/include
+LIBS := -lm
 
-ifdef MKL_DIR
-ABS_INCLUDES += -I $(MKL_DIR)/include
+EXTDIRS := 
+
+# Collect the includes and libraries we need
+ifdef YAML_DIR
+INCLUDES += -I $(YAML_DIR)/include
+LIBS += -L $(YAML_DIR)/lib -lyaml-cpp
+else
+$(error Require YAML_DIR in environment)
 endif
 
-SUBDIRS = 
+ifdef GBUTIL_DIR
+INCLUDES += -I $(GBUTIL_DIR)
+EXTDIRS += $(GBUTIL_DIR)
+else
+$(error Require GBUTIL_DIR in environment)
+endif
 
-INCLUDES = -I ../utilities
+ifdef TMV_DIR
+INCLUDES += -I $(TMV_DIR)/include -D USE_TMV
+LIBS += $(shell cat $(TMV_DIR)/share/tmv/tmv-link) -ltmv_symband 
+endif
 
-CXXFLAGS = $(OPTFLAGS) $(ABS_INCLUDES) $(INCLUDES)
+ifdef EIGEN_DIR
+INCLUDES += -I $(EIGEN_DIR) -D USE_EIGEN
+endif
 
-SRC = $(shell ls *.cpp)
+# Check that either TMV or EIGEN are available (ok to have both)
+$(if $(or $(TMV_DIR),$(EIGEN_DIR)), , $(error Need either TMV_DIR or EIGEN_DIR))
 
-OBJ = Astrometry.o Ephemeris.o PixelMap.o PolyMap.o PixelMapCollection.o SubMap.o Wcs.o \
-      TemplateMap.o PiecewiseMap.o AlphaUpdater.o YAMLCollector.o
+ifdef MKL_DIR
+INCLUDES += -I $(MKL_DIR)/include -D USE_MKL
+endif
 
-all:  $(OBJ)
+# Object files found in external packages, :
+EXTOBJS =$(GBUTIL_DIR)/StringStuff.o $(GBUTIL_DIR)/Poly2d.o
 
-# For building test programs:
-UTILITIES := ../utilities
-SUBOBJ = $(UTILITIES)/StringStuff.o $(UTILITIES)/Poly2d.o 
-LIB_DIRS = -L $(TMV_DIR)/lib -L -L $(YAML_DIR)/lib
-TMV_LINK := $(shell cat $(TMV_DIR)/share/tmv/tmv-link)
-CXXFLAGS = $(OPTFLAGS) $(ABS_INCLUDES) $(INCLUDES)
-LIBS = -lm $(LIB_DIRS) -lyaml-cpp -ltmv_symband $(TMV_LINK)
+##### 
+BINDIR = bin
+OBJDIR = obj
+SRCDIR = src
+SUBDIR = src
+INCLUDEDIR = include
+TESTDIR = tests
+TESTBINDIR = testbin
 
-testSphericalYAML: testSphericalYAML.o Astrometry.o $(SUBOBJ)
+
+# INCLUDES can be relative paths, and will not be exported to subdirectory makes.
+INCLUDES += -I $(INCLUDEDIR)
+
+# Executable C++ programs - none
+# C++ subroutines
+SUBS :=  $(wildcard $(SUBDIR)/*.cpp)
+SUBOBJS := $(SUBS:$(SUBDIR)/%.cpp=$(OBJDIR)/%.o)
+
+CP = /bin/cp -p
+RM = /bin/rm -f
+
+#######################
+# Rules - ?? dependencies on INCLUDES ??
+#######################
+
+all: $(SUBOBJS)
+
+# Compilation
+$(SUBOBJS): $(OBJDIR)/%.o : $(SUBDIR)/%.cpp 
+	$(CXX) $(CXXFLAGS) $(INCLUDES) -c $< -o $@
+
+######### Test programs
+
+TESTSRC := $(wildcard $(TESTDIR)/*.cpp)
+TESTINCLUDE := -I $(TESTDIR)
+TESTOBJS := $(TESTSRC:$(TESTDIR)/%.cpp=$(OBJDIR)/%.o)
+TESTTARGETS := $(TESTSRC:$(TESTDIR)/%.cpp=$(TESTBINDIR)/%)
+TESTSPY := $(wildcard $(TESTDIR)/*.py)
+
+tests: $(TESTTARGETS)
+
+$(TESTOBJS):  $(OBJDIR)/%.o : $(TESTDIR)/%.cpp
+	$(CXX) $(CXXFLAGS) $(INCLUDES) $(TESTINCLUDE) -c $^ -o $@
+
+$(TESTTARGETS): $(TESTBINDIR)/% : $(OBJDIR)/%.o $(SUBOBJS) $(EXTOBJS)
 	$(CXX) $(CXXFLAGS) $^  $(LIBS) -o $@
-testCollector: testCollector.o YAMLCollector.o $(SUBOBJ)
-	$(CXX) $(CXXFLAGS) $^  $(LIBS) -o $@
-
 
 ###############################################################
 ## Standard stuff:
 ###############################################################
 
+exts:
+	for dir in $(EXTDIRS); do (cd $$dir && $(MAKE)); done
 
-subs:
-	for dir in $(SUBDIRS); do (cd $$dir && $(MAKE)); done
+depend: local-depend
+	for dir in $(EXTDIRS); do (cd $$dir && $(MAKE) depend); done
 
-depend:
-	for dir in $(SUBDIRS); do (cd $$dir && $(MAKE) depend); done
-	$(CXX) $(CXXFLAGS) -MM $(SRC) > .$@
+local-depend:
+	$(RM) .depend
+	for src in $(SUBS:%.cpp=%) $(EXECS:%.cpp=%); \
+	 do $(CXX) $(CXXFLAGS) $(INCLUDES) -MM $$src.cpp -MT obj/$$src.o >> .depend; \
+        done
 
-clean:
-	for dir in $(SUBDIRS); do (cd $$dir && $(MAKE) clean); done
-	rm -f *.o *~ *.aux *.log *.dvi core .depend
+clean: local-clean
+	for dir in $(EXTDIRS); do (cd $$dir && $(MAKE) clean); done
+
+local-clean:
+	rm -f $(OBJDIR)/*.o $(BINDIR)/* $(TESTBINDIR)/* *~ *.dvi *.aux core .depend
 
 ifeq (.depend, $(wildcard .depend))
 include .depend
 endif
 
-export
-
 .PHONY: all install dist depend clean 
+
+

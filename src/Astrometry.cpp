@@ -818,11 +818,11 @@ namespace astrometry {
   Vector3
   Orientation::toICRS(const Vector3& x) const {
     // Use fact that rMatrix inverse is its transpose:
-    return x*rMatrix;
+    return rMatrix.transpose()*x;
   }
 
   Orientation::Orientation(const SphericalCoords& pole_, 
-			   double pa): zrot(-pa), rMatrix(3) {
+			   double pa): zrot(-pa) {
     pole.convertFrom(pole_);
     buildMatrix();
   }
@@ -1130,16 +1130,15 @@ namespace astrometry {
     x = rhs.getVector();
     x *= 1./r;
     if (!partials) return;
-    partials->setAllTo(1./r);
-    (*partials)(0,0) *= 1. - x[0]*x[0];
-    (*partials)(0,1) *=    - x[0]*x[1];
-    (*partials)(0,2) *=    - x[0]*x[2];
-    (*partials)(1,0) *=    - x[1]*x[0];
-    (*partials)(1,1) *= 1. - x[1]*x[1];
-    (*partials)(1,2) *=    - x[1]*x[2];
-    (*partials)(2,0) *=    - x[2]*x[0];
-    (*partials)(2,1) *=    - x[2]*x[1];
-    (*partials)(2,2) *= 1. - x[2]*x[2];
+    (*partials)(0,0) =( 1. - x[0]*x[0])/r;
+    (*partials)(0,1) =(    - x[0]*x[1])/r;
+    (*partials)(0,2) =(    - x[0]*x[2])/r;
+    (*partials)(1,0) =(    - x[1]*x[0])/r;
+    (*partials)(1,1) =( 1. - x[1]*x[1])/r;
+    (*partials)(1,2) =(    - x[1]*x[2])/r;
+    (*partials)(2,0) =(    - x[2]*x[0])/r;
+    (*partials)(2,1) =(    - x[2]*x[1])/r;
+    (*partials)(2,2) =( 1. - x[2]*x[2])/r;
   }
   void
   SphericalCoords::projectIt(const CartesianCoords& rhs,
