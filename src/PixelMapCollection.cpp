@@ -41,24 +41,24 @@ PixelMapCollection::PixelMapCollection() {
 
 PixelMapCollection::~PixelMapCollection() {
   // Destroy all of the compounded maps and submaps we've made:
-  for (MapIter i = mapElements.begin(); i!=mapElements.end(); ++i) {
-    if (i->second.atom) {
-      delete i->second.atom;
-      i->second.atom = 0;
+  for (auto& i : mapElements) {
+    if (i.second.atom) {
+      delete i.second.atom;
+      i.second.atom = 0;
     }
-    if (i->second.realization) {
-      delete i->second.realization;
-      i->second.realization = 0;
+    if (i.second.realization) {
+      delete i.second.realization;
+      i.second.realization = 0;
     }
   }
-  for (WcsIter i = wcsElements.begin(); i!=wcsElements.end(); ++i) {
-    if (i->second.nativeCoords) {
-      delete i->second.nativeCoords;
-      i->second.nativeCoords = 0;
+  for (auto& i : wcsElements) {
+    if (i.second.nativeCoords) {
+      delete i.second.nativeCoords;
+      i.second.nativeCoords = 0;
     }
-    if (i->second.realization) {
-      delete i->second.realization;
-      i->second.realization = 0;
+    if (i.second.realization) {
+      delete i.second.realization;
+      i.second.realization = 0;
     }
   }
 }
@@ -70,8 +70,8 @@ PixelMapCollection::~PixelMapCollection() {
 void
 PixelMapCollection::setParams(const DVector& p) {
   Assert(p.size()==parameterCount);
-  for (MapIter i = mapElements.begin(); i!=mapElements.end(); ++i) {
-    MapElement& map = i->second;
+  for (auto& melpair : mapElements) {
+    MapElement& map = melpair.second;
     // Clear any defaulted flags
     map.isDefaulted = false;
     if (map.isFixed) continue;
@@ -139,15 +139,15 @@ PixelMapCollection::setFixed(set<string> nameList, bool isFixed) {
 
 bool
 PixelMapCollection::getFixed(string name) const {
-  ConstMapIter i = mapElements.find(name);
+  auto i = mapElements.find(name);
   if (i==mapElements.end())
     throw AstrometryError("No member of PixelMapCollection named " + name);
   auto& mel = i->second;
   if (mel.atom) {
     return mel.isFixed;
   } else {
-    for (auto i : mel.subordinateMaps) {
-      if (!getFixed(i)) {
+    for (auto j : mel.subordinateMaps) {
+      if (!getFixed(j)) {
 	// Any free member means compound is free
 	return false;
       }
@@ -158,15 +158,15 @@ PixelMapCollection::getFixed(string name) const {
 
 bool
 PixelMapCollection::getDefaulted(string name) const {
-  ConstMapIter i = mapElements.find(name);
+  auto i = mapElements.find(name);
   if (i==mapElements.end())
     throw AstrometryError("No member of PixelMapCollection named " + name);
   auto& mel = i->second;
   if (mel.atom) {
     return mel.isDefaulted;
   } else {
-    for (auto i : mel.subordinateMaps) {
-      if (getDefaulted(i)) {
+    for (auto j : mel.subordinateMaps) {
+      if (getDefaulted(j)) {
 	// Any defaulted member means compound map is defaulted
 	return true;
       }
@@ -196,8 +196,8 @@ PixelMapCollection::rebuildParameterVector() {
   // And map counting
   atomCount = 0;
   freeCount = 0;
-  for (MapIter i = mapElements.begin(); i!=mapElements.end(); ++i) {
-    MapElement& map = i->second;
+  for (auto& i : mapElements) {
+    MapElement& map = i.second;
     // Only atomic map components go into the big parameter vector
     map.nParams = 0;
     map.number = -1;
@@ -216,8 +216,8 @@ PixelMapCollection::rebuildParameterVector() {
   }
 
   // Then go through all extant SubMaps and update their versions of vectors & parameter counts.
-  for (MapIter i = mapElements.begin(); i!=mapElements.end(); ++i) {
-    MapElement& map = i->second;
+  for (auto& i : mapElements) {
+    MapElement& map = i.second;
     // Is there a SubMap here that we need to update?
     SubMap* sub = map.realization;
     if (!sub) continue;
@@ -225,7 +225,7 @@ PixelMapCollection::rebuildParameterVector() {
     // Loop through all the map elements that this SubMap uses
     for (int iElement = 0; iElement < sub->vMaps.size(); iElement++) {
       string elementName = sub->vMaps[iElement]->getName();
-      ConstMapIter j = mapElements.find(elementName);
+      auto j = mapElements.find(elementName);
       if (j==mapElements.end()) 
 	throw AstrometryError("PixelMapCollection::rebuildParameterVector could not find"
 			      " map element with name " + elementName);
@@ -248,20 +248,16 @@ PixelMapCollection::rebuildParameterVector() {
 vector<string>
 PixelMapCollection::allMapNames() const {
   vector<string> output;
-  for (ConstMapIter i = mapElements.begin();
-       i != mapElements.end();
-       ++i) 
-    output.push_back(i->first);
+  for (auto& i : mapElements) 
+    output.push_back(i.first);
   return output;
 }
 
 vector<string>
 PixelMapCollection::allWcsNames() const {
   vector<string> output;
-  for (ConstWcsIter i = wcsElements.begin();
-       i != wcsElements.end();
-       ++i) 
-    output.push_back(i->first);
+  for (auto& i : wcsElements)
+    output.push_back(i.first);
   return output;
 }
 
@@ -358,45 +354,41 @@ PixelMapCollection::learnWcs(const Wcs& wcs,
 void
 PixelMapCollection::learn(PixelMapCollection& rhs, bool duplicateNamesAreExceptions) {
   if (&rhs == this) return;	// No need to learn self
-  for (ConstMapIter iMap = rhs.mapElements.begin();
-       iMap != rhs.mapElements.end();
-       ++iMap) {
-    const MapElement& incoming = iMap->second;
-    if (mapExists(iMap->first)) {
+  for (auto& iMap : rhs.mapElements) {
+    const MapElement& incoming = iMap.second;
+    if (mapExists(iMap.first)) {
       // incoming map duplicates and existing name.
       if (duplicateNamesAreExceptions) 
 	throw AstrometryError("learn(PixelMapCollection) with duplicate map name "
-			      + iMap->first);
+			      + iMap.first);
       // Duplicate will just be ignored. 
     } else {
       // A new mapName for us.  Add its mapElement to our list.
       MapElement mel;
-      if (iMap->second.atom) mel.atom = iMap->second.atom->duplicate();
-      mel.isFixed = iMap->second.isFixed;
-      mel.isDefaulted = iMap->second.isDefaulted;
-      mel.subordinateMaps = iMap->second.subordinateMaps;
-      mapElements.insert(std::pair<string,MapElement>(iMap->first, mel));
+      if (iMap.second.atom) mel.atom = iMap.second.atom->duplicate();
+      mel.isFixed = iMap.second.isFixed;
+      mel.isDefaulted = iMap.second.isDefaulted;
+      mel.subordinateMaps = iMap.second.subordinateMaps;
+      mapElements.insert(std::pair<string,MapElement>(iMap.first, mel));
       // Note cannot introduce circularity if the top-level map is new.
     }
   } // end input map loop
 
-  for (WcsIter iWcs = rhs.wcsElements.begin();
-       iWcs != rhs.wcsElements.end();
-       ++iWcs) {
-    WcsElement& incoming = iWcs->second;
-    if (wcsExists(iWcs->first)) {
+  for (auto& iWcs : rhs.wcsElements) {
+    WcsElement& incoming = iWcs.second;
+    if (wcsExists(iWcs.first)) {
       // incoming wcs duplicates and existing name.
       if (duplicateNamesAreExceptions) 
 	throw AstrometryError("learn(PixelMapCollection) with duplicate WCS name "
-			      + iWcs->first);
+			      + iWcs.first);
       // Duplicate will just be ignored.  
     } else {
       // A new wcsName for us.  Add its info to our collection
       WcsElement wel;
-      wel.mapName = iWcs->second.mapName;
-      wel.nativeCoords = iWcs->second.nativeCoords->duplicate();
-      wel.wScale = iWcs->second.wScale;
-      wcsElements.insert(std::pair<string,WcsElement>(iWcs->first, wel));
+      wel.mapName = iWcs.second.mapName;
+      wel.nativeCoords = iWcs.second.nativeCoords->duplicate();
+      wel.wScale = iWcs.second.wScale;
+      wcsElements.insert(std::pair<string,WcsElement>(iWcs.first, wel));
     }
   } // end input wcs loop
 
@@ -412,18 +404,17 @@ PixelMapCollection::defineChain(string chainName, const list<string>& elements) 
     throw AstrometryError("PixelMapCollection::defineChain with duplicate name: " 
 			  + chainName);
   // Check that elements exist
-  for (list<string>::const_iterator i = elements.begin();
-       i != elements.end();
-       ++i) 
-    if (!mapExists(*i))
+  for (auto& i : elements) {
+    if (!mapExists(i))
       throw AstrometryError("PixelMapCorrection::defineChain with unknown pixel map element: "
-			    + *i);
+			    + i);
+  }
   mapElements.insert(std::pair<string, MapElement>(chainName, MapElement()));
   mapElements[chainName].subordinateMaps = elements;
   // Note that adding a new chain does not change parameter vector assignments
   // Nor can it introduce circular dependence if chain name is new and all elements exist.
 }
-
+  
 // Define a WCS system to be the given PixelMap followed by projection to the
 // sky described by the nativeCoords system.
 void 
@@ -460,15 +451,13 @@ PixelMapCollection::issueMap(string mapName) {
 
     list<PixelMap*> atoms;
     int index=0;
-    for (list<string>::const_iterator i = atomList.begin();
-	 i != atomList.end();
-	 ++i, ++index) {
-      Assert(mapElements[*i].atom);	// All elements should be atomic
-      atoms.push_back(mapElements[*i].atom);
+    for (auto& i : atomList) {
+      Assert(mapElements[i].atom);	// All elements should be atomic
+      atoms.push_back(mapElements[i].atom);
       // fill in its indices into master vector:
-      startIndices[index] = mapElements[*i].startIndex;
-      nParams[index] = mapElements[*i].isFixed ? 0 : mapElements[*i].nParams;
-      mapNumbers[index] = mapElements[*i].number;
+      startIndices[index] = mapElements[i].startIndex;
+      nParams[index] = mapElements[i].isFixed ? 0 : mapElements[i].nParams;
+      mapNumbers[index] = mapElements[i].number;
     }
     SubMap* sm = new SubMap(atoms, mapName, true);
     sm->vStartIndices = startIndices;
@@ -492,16 +481,12 @@ PixelMapCollection::cloneMap(string mapName) const {
 
   // A composite one we will create as a SubMap:
   list<PixelMap*> vMaps;
-  for (list<string>::const_iterator i = el.subordinateMaps.begin();
-	 i != el.subordinateMaps.end();
-	 ++i) 
-    vMaps.push_back(cloneMap(*i));
+  for (auto& i : el.subordinateMaps)
+    vMaps.push_back(cloneMap(i));
   SubMap* retval = new SubMap(vMaps, mapName, false);
   // Clean up the stray clones since they've been duplicated by SubMap:
-  for (list<PixelMap*>::iterator i = vMaps.begin();
-       i != vMaps.end();
-       ++i)
-    delete *i;
+  for (auto i : vMaps)
+    delete i;
   return retval;
 }
 
@@ -538,17 +523,15 @@ set<string>
 PixelMapCollection::dependencies(string target) const {
   // Find target MapElement and add target to output dependency list.  
   // Assume no circular dependence.
-  ConstMapIter iTarget = mapElements.find(target);
+  auto iTarget = mapElements.find(target);
   if (iTarget == mapElements.end()) 
     throw AstrometryError("PixelMapCollection has no element " + target + " in dependencies()");
   set<string> output;
   output.insert(target);
 
   // Call this routine recursively for all the map elements that the target depends on
-  for (list<string>::const_iterator i = iTarget->second.subordinateMaps.begin();
-       i != iTarget->second.subordinateMaps.end();
-       ++i) {
-    set<string> subs = dependencies(*i);
+  for (auto& i : iTarget->second.subordinateMaps) {
+    set<string> subs = dependencies(i);
     output.insert(subs.begin(), subs.end());
   }
 
@@ -587,10 +570,8 @@ PixelMapCollection::orderAtoms(string mapName) const {
 
   // Otherwise we have a compound map at work here.
   // Call recursively to all subordinateMaps:
-  for (list<string>::const_iterator i = m.subordinateMaps.begin();
-       i != m.subordinateMaps.end();
-       ++i) {
-    list<string> subList = orderAtoms(*i);
+  for (auto& i : m.subordinateMaps) {
+    list<string> subList = orderAtoms(i);
     retval.splice(retval.end(), subList);
   }
   return retval;
@@ -609,28 +590,23 @@ PixelMapCollection::checkCircularDependence(string mapName,
   set<string> ancestorsPlusSelf(ancestors);
   ancestorsPlusSelf.insert(mapName);
   const MapElement& m = mapElements.find(mapName)->second;
-  for (list<string>::const_iterator i = m.subordinateMaps.begin();
-       i != m.subordinateMaps.end();
-       ++i) 
-    checkCircularDependence(*i, ancestorsPlusSelf);
+  for (auto& i : m.subordinateMaps) 
+    checkCircularDependence(i, ancestorsPlusSelf);
 }
 
 void
 PixelMapCollection::checkCompleteness() const {
   // Loop through all the (non-atomic) maps, throw exception if they refer to 
   // non-existent map elements or to themselves
-  for (ConstMapIter i = mapElements.begin();
-       i != mapElements.end();
-       ++i)
-    checkCircularDependence(i->first);
+  for (auto& i : mapElements) 
+    checkCircularDependence(i.first);
 
   // Loop through all the Wcs's, making sure their pixelmaps exist.
-  for (ConstWcsIter i = wcsElements.begin();
-       i != wcsElements.end();
-       ++i)
-    if (!mapExists(i->second.mapName))
-      throw AstrometryError("PixelMapCollection Wcs <" + i->first + "> refers to unknown PixelMap <"
-			    + i->second.mapName + ">");
+  for (auto& i : wcsElements) {
+    if (!mapExists(i.second.mapName))
+      throw AstrometryError("PixelMapCollection Wcs <" + i.first + "> refers to unknown PixelMap <"
+			    + i.second.mapName + ">");
+  }
 }
 
 
@@ -927,5 +903,3 @@ PixelMapCollection::parameterIndicesOf(string mapname,
   nParams = mel.nParams;
   return;
 }
-
-

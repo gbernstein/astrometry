@@ -23,7 +23,6 @@
 using std::list;
 #include <string>
 #include "Std.h"
-#include "UseTMV.h"
 #include "yaml-cpp/yaml.h"
 #include "PixelMap.h"
 #include "Wcs.h"
@@ -284,11 +283,6 @@ namespace astrometry {
     };
 
     map<string, WcsElement> wcsElements; // all known Wcs's, indexed by name.
-
-    typedef map<string, MapElement>::iterator MapIter;
-    typedef map<string, WcsElement>::iterator WcsIter;
-    typedef map<string, MapElement>::const_iterator ConstMapIter;
-    typedef map<string, WcsElement>::const_iterator ConstWcsIter;
 
     // **** Useful utilities: *****
 
