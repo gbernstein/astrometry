@@ -259,7 +259,7 @@ PiecewiseMap::toWorldDerivs(double xpix, double ypix,
 			    double& xworld, double& yworld,
 			    DMatrix& derivs,
 			    double color) const {
-  Assert(derivs.ncols()==v.size()-2 && derivs.nrows()==2);
+  Assert(derivs.cols()==v.size()-2 && derivs.rows()==2);
   derivs.setZero();
 
   // Keep in mind here that first and last v elements must be zero and

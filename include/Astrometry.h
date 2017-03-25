@@ -20,6 +20,8 @@ namespace astrometry {
   typedef linalg::SMatrix<double,3,3> Matrix33;
   typedef linalg::Matrix<double> DMatrix;
   typedef linalg::Vector<double> DVector;
+  const double NODATA=-888.;
+
   
   class AstrometryError: public std::runtime_error {
   public:

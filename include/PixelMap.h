@@ -16,9 +16,8 @@
 #include <iostream>
 #include "yaml-cpp/yaml.h"
 #include "Std.h"
-#include "UseTMV.h"
+#include "LinearAlgebra.h"
 #include "Astrometry.h"
-#include "NoData.h"
 
 // Note that Astrometry.h has typdefs for the 2- and 3-element small vectors & matrices
 

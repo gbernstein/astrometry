@@ -127,7 +127,7 @@ TemplateMap::toWorldDerivs(double xpix, double ypix,
 			   double& xworld, double& yworld,
 			   DMatrix& derivs,
 			   double color) const {
-  Assert(derivs.ncols()==1 && derivs.nrows()==2);
+  Assert(derivs.cols()==1 && derivs.rows()==2);
 
   const lookup::Lookup1d* lu= (hasSplit && xpix>xSplit) ? tableHigh : tableLow;
   double delta = lu->value(xpix,ypix);

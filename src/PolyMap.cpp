@@ -93,10 +93,15 @@ PolyMap::toPixDerivs( double xworld, double yworld,
   rescale(xx,yy);
   DVector dx = xpoly.derivC(xx,yy);
   DVector dy = ypoly.derivC(xx,yy);
-  Assert(derivs.ncols()==2 && derivs.nrows()==(dx.size()+dy.size()));
+  Assert(derivs.cols()==2 && derivs.rows()==(dx.size()+dy.size()));
   derivs.setZero();
+#ifdef USE_TMV
   derivs.row(0,0,dx.size()) = dx;
   derivs.row(1,dx.size(), dx.size()+dy.size()) = dy;
+#elif defined USE_EIGEN
+  derivs.block(0,0,1,dx.size()) = dx.transpose();
+  derivs.block(1,dx.size(),1,dy.size()) = dy.transpose();
+#endif
 }
 
 void 
@@ -108,10 +113,15 @@ PolyMap::toWorldDerivs(double xpix, double ypix,
   rescale(xpix,ypix);
   DVector dx = xpoly.derivC(xpix, ypix);
   DVector dy = ypoly.derivC(xpix, ypix);
-  Assert(derivs.nrows()==2 && derivs.ncols()==(dx.size()+dy.size()));
+  Assert(derivs.rows()==2 && derivs.cols()==(dx.size()+dy.size()));
   derivs.setZero();
+#ifdef USE_TMV
   derivs.row(0,0,dx.size()) = dx;
   derivs.row(1,dx.size(), dx.size()+dy.size()) = dy;
+#elif defined USE_EIGEN
+  derivs.block(0,0,1,dx.size()) = dx.transpose();
+  derivs.block(1,dx.size(),1,dy.size()) = dy.transpose();
+#endif
 }
 
 // A linear map too
@@ -157,7 +167,7 @@ LinearMap::toPixDerivs( double xworld, double yworld,
 			DMatrix& derivs,
 			double color) const {
   toPix(xworld, yworld, xpix, ypix);
-  Assert(derivs.ncols()==6 && derivs.nrows()==2);
+  Assert(derivs.cols()==DIM && derivs.rows()==2);
   derivs.setZero();
   derivs(0,0) = 1.;
   derivs(0,1) = xpix;
@@ -173,7 +183,7 @@ LinearMap::toWorldDerivs(double xpix, double ypix,
 			 DMatrix& derivs,
 			 double color) const {
   toWorld(xpix, ypix, xworld, yworld);
-  Assert(derivs.ncols()==6 && derivs.nrows()==2);
+  Assert(derivs.cols()==DIM && derivs.rows()==2);
   derivs.setZero();
   derivs(0,0) = 1.;
   derivs(0,1) = xpix;
@@ -200,7 +210,7 @@ LinearMap::makeInv() {
 
 void
 LinearMap::write(YAML::Emitter& os) const {
-  vector<double> vv(6);
+  vector<double> vv(DIM);
   for (int i=0; i<vv.size(); i++) vv[i] = v[i];
   os << YAML::BeginMap
      << YAML::Key << "Type" << YAML::Value << type()
@@ -218,9 +228,9 @@ LinearMap::create(const YAML::Node& node,
 
   if (node["Coefficients"]) {
     vector<double> vv = node["Coefficients"].as<vector<double> >();
-    if (vv.size()!=6)
+    if (vv.size()!=DIM)
       throw AstrometryError("LinearMap has wrong # of coefficients at YAML node " + name);
-    DVector v(6);
+    DVector v(DIM);
     for (int i=0; i<v.size(); i++) v[i]=vv[i];
     defaulted = false;
     return new LinearMap(v, name);
