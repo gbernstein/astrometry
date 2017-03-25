@@ -5,8 +5,8 @@ using namespace astrometry;
 
 Wcs::Wcs(PixelMap* pm_, const SphericalCoords& nativeCoords_, string name, 
 	 double wScale_, bool shareMap_): PixelMap(name), wScale(wScale_), 
-					 nativeCoords(0),
-					 targetCoords(0),
+					 nativeCoords(nullptr),
+					 targetCoords(nullptr),
 					 shareMap(shareMap_)
 {
   nativeCoords = nativeCoords_.duplicate();
@@ -68,7 +68,7 @@ void
 Wcs::useNativeProjection() {
   if (targetCoords) {
     delete targetCoords;
-    targetCoords = 0;
+    targetCoords = nullptr;
   }
 }  
 

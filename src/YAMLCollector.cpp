@@ -106,15 +106,12 @@ YAMLCollector::Replacer::Replacer(const Dictionary& dict_) {
 
 int
 YAMLCollector::Replacer::process(string& src, int maxSubs) const {
-  //**/cerr << "Processing---" << src << "---" << endl;
   int substitutions = 0;
   for (auto& entry : dict) {
     if (std::regex_search(src, entry.first)) {
       // Replacing from the dictionary
       ++substitutions;
       string temp = std::regex_replace(src, entry.first, entry.second);
-      //**/cerr << "process temp <" << temp << "> from src <"
-      //**	       << src << "> entry " << entry.second << endl;
       src = temp;
     }
     if (substitutions >= maxSubs) break;
@@ -169,8 +166,6 @@ YAMLCollector::addMap(string name, const Dictionary& dict) {
     return false;
 
   // Create a node from the serialized output.
-  //**/cerr << "About to parse YAML for <" << name << ">" << endl;
-  //**/cerr << "Contents:---\n" << serialized << "---" << endl;
   YAML::Node mapNode = YAML::Load(serialized);
   if (!mapNode.IsMap() || !mapNode["Type"])
     throw AstrometryError("YAMLCollector found ill-formed map at " + name);
