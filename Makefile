@@ -49,7 +49,7 @@ INCLUDES += -I $(MKL_DIR)/include -D USE_MKL
 endif
 
 # Object files found in external packages, :
-EXTOBJS =$(GBUTIL_DIR)/StringStuff.o $(GBUTIL_DIR)/Poly2d.o
+EXTOBJS =$(GBUTIL_DIR)/StringStuff.o $(GBUTIL_DIR)/Poly2d.o $(GBUTIL_DIR)/Lookup1d.o
 
 ##### 
 BINDIR = bin
@@ -81,6 +81,10 @@ all: $(SUBOBJS)
 # Compilation
 $(SUBOBJS): $(OBJDIR)/%.o : $(SUBDIR)/%.cpp 
 	$(CXX) $(CXXFLAGS) $(INCLUDES) -c $< -o $@
+
+# Remake external packages to update external objects
+# Shut off default rule for this; can I do it only when out of date??
+$(EXTOBJS): exts ;
 
 ######### Test programs
 

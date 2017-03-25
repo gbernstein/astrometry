@@ -1,6 +1,7 @@
 // Test writing and reading of PixelMaps
 
 #include "PixelMap.h"
+#include "yaml-cpp/yaml.h"
 #include <sstream>
 
 using namespace astrometry;
@@ -20,14 +21,16 @@ main(int argc,
 
   string serial;
   {
-    ostringstream oss;
-    mapIn.write(oss);
-    serial = oss.str();
+    YAML::Emitter out;
+    out << mapIn;
+    serial = out.c_str();
     cout << "Serialized Map:" << endl;
-    cout << serial;
+    cout << serial << endl;
   }
   istringstream iss(serial);
-  PixelMap* mapOut = ReprojectionMap::create(iss, "name2");
+  YAML::Node root = YAML::Load(iss);
+  bool defaulted;
+  PixelMap* mapOut = ReprojectionMap::create(root, defaulted, "name2");
 
   double xp = -0.25;
   double yp = 2.5;

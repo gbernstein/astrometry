@@ -6,7 +6,7 @@ using namespace astrometry;
 int main(int argc,
 	 char *argv[]) {
   try {
-    YAMLCollector yc("i.*@dummy.yaml", "PixelMapCollection");
+    YAMLCollector yc("i.*@testdata/dummy.yaml", "PixelMapCollection");
     YAMLCollector::Dictionary d;
     d["BAND"] = "i";
     d["DEVICE"] = "N4";
