@@ -17,13 +17,11 @@ SubMap::SubMap(const list<PixelMap*>& pixelMaps,
 				anyColor(false)
 {
   // set up parameter vectors, making all PixelMap parameters free and consectuve by default
-  for (list<PixelMap*>::const_iterator i = pixelMaps.begin();
-       i != pixelMaps.end();
-       ++i) {
+  for (auto& i : pixelMaps) {
     if (shareMaps) {
-      vMaps.push_back(*i);
+      vMaps.push_back(i);
     } else {
-      vMaps.push_back((*i)->duplicate());
+      vMaps.push_back(i->duplicate());
     }
   }
   vNSubParams.clear();
@@ -40,15 +38,15 @@ SubMap::SubMap(const list<PixelMap*>& pixelMaps,
 
 SubMap::~SubMap() {
   if (ownMaps) 
-    for (int i=0; i<vMaps.size(); i++)
-      delete vMaps[i];
+    for (auto i : vMaps)
+      delete i;
 }
 
 PixelMap*
 SubMap::duplicate() const {
   list <PixelMap*> pmlist;
-  for (int i=0; i<nMaps(); i++)
-    pmlist.push_back(vMaps[i]);
+  for (auto i : vMaps)
+    pmlist.push_back(i);
   return new SubMap(pmlist, getName(), !ownMaps);
 }
 
@@ -172,7 +170,7 @@ SubMap::toWorldDerivs( double xpix, double ypix,
     return;
   }
 
-  Assert(derivs.nrows()==2 && derivs.ncols()==nParams());
+  Assert(derivs.rows()==2 && derivs.cols()==nParams());
   derivs.setZero();
 
   // Start with identity transformation:
@@ -186,15 +184,15 @@ SubMap::toWorldDerivs( double xpix, double ypix,
     ypix = yworld;
     if (index>0) {
       // transform derivs of previous maps into new coords:
-      DMatrix tmp = vMaps[iMap]->dWorlddPix(xpix,ypix,color) * derivs.colRange(0,index);
-      derivs.colRange(0,index) = tmp; 
+      DMatrix tmp = vMaps[iMap]->dWorlddPix(xpix,ypix,color) * derivs.subMatrix(0,2,0,index);
+      derivs.subMatrix(0,2,0,index) = tmp; 
     }
     int nNext = nSubParams(iMap);  
     if (nNext>0) {
       Assert(nNext == vMaps[iMap]->nParams());
       DMatrix dd(2,nNext);
       vMaps[iMap]->toWorldDerivs(xpix,ypix,xworld,yworld,dd, color);
-      derivs.colRange(index, index+nNext) = dd; 
+      derivs.subMatrix(0,2,index, index+nNext) = dd; 
       index += nNext;
     } else {
       // No parameters to worry about for this map:
