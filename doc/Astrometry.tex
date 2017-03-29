@@ -3,6 +3,7 @@
 \newcommand{\bfx}{\mbox{\bf x}}
 \newcommand{\bfu}{\mbox{\bf u}}
 \newcommand{\bfa}{\mbox{\boldmath $\alpha$}}
+\newcommand{\cpp}{\texttt{C++}}
 \begin{document}
 
 \title{Documentation for Astrometry Classes}
@@ -11,14 +12,24 @@
 \affil{Dept. of Physics \& Astronomy, University of Pennsylvania}
 \email{garyb@physics.upenn.edu}
 
+\hspace*{\fill}Revision: 28 March 2017
+
+\section{Introduction}
+The \texttt{astrometry} repository contains code for manipulation of time, angular, and 3d coordinates, which are documented here.  The repository also contains code for specifying parametric transformations of 2d coordinates; these are documented in the \textit{PixelMap} document.
+
 \section{Dependences}
-All routines described here are placed in the {\tt astrometry} namespace.  All exceptions are thrown as the {\tt AstrometryError} class, which is derived from {\tt std::runtime\_error}.
+All routines described here are placed in the {\tt astrometry} namespace.  All exceptions are thrown as the {\tt AstrometryError} class, which is derived from {\tt std::runtime\_error}.  
 
-The coordinate routines involve frequent manipulation of 2- and 3-dimensional vectors and matrices.  These are implemented by use of the ``{\tt Small}'' feature of Mike Jarvis's {\it TMV} linear algebra package, which uses templates to hard-wire the dimensionality and avoid a lot of overhead.  {\it Astrometry.h} starts with {\tt typedef}'s to give local type names {\tt Vector2, Vector3, Matrix22, Matrix23,} etc., to vectors and matrices of the given types.  Moving to another vector/matrix package should just involve changing these typedefs, as long as the package has properly implemented multiplication operators and element access with the same syntax as {\it TMV}.  Also the {\it TMV} routine {\tt setToIdentity()} is used a lot.
+The \texttt{astrometry} codes are dependent upon the utility programs in the \texttt{gbutil} repository.  Two external packages are required:
+\begin{itemize}
+\item The \texttt{yaml-cpp} package by J.~Bedel provides a \cpp\ interface to the YAML markup language that we use for easily-readable serialization of the \texttt{astrometry} classes.
+\item Either the \texttt{TMV} package from Mike Jarvis or the \texttt{Eigen} header-only package must be used for linear algebra.  The choice of which is used is made at compile time using environment variables.  The \textit{gbutil/LinearAlgebra.h} file contains classes for vectors and matrices which can wrap either the TMV or Eigen classes, and provide a common interface that allows much of the union of the syntax of the two packages for basic matrix/vector arithmetic.  The wrapper classes \texttt{DVector} and \texttt{DMatrix} for dynamically-sized double-valued vector/matrix are brought into the \texttt{astrometry} namespace.
+\end{itemize}
 
-[{\bf Note:} There is one gotcha in the {\tt TMV::SmallMatrix} class, which is that there is no checking for aliasing, so expressions like {\tt v = m * v} can fail.]
+The coordinate routines involve frequent manipulation of 2- and 3-dimensional vectors and matrices.  These are implemented with run-time overhead using fixed-size vectors/matrices provided by either \texttt{TMV::SmallMatrix/Vector} or the \texttt{Eigen::Matrix} classes.  
+{\it Astrometry.h} gives {\tt typedef}'s  {\tt Vector2, Vector3, Matrix22, Matrix23,Matrix33} in the local namespace.\footnote{There is one gotcha in the {\tt TMV::Small*} classes, which is that there is no checking for aliasing, so expressions like {\tt v = m * v} can fail. Also the overloads for matrix/vector multiplication can be subtly different because \texttt{Eigen} distinguishes row and column vectors while \texttt{TMV} does not.}
 
-The utility file {\tt AstronomicalConstants.h} is included by {\tt Astrometry.h} to define many constants used in astrometry and ephemeris programs.  Of particular interest:
+The \textit{gbutil/AstronomicalConstants.h} file is included by {\tt Astrometry.h} to define many constants used in astrometry and ephemeris programs.  Of particular interest:
 \begin{itemize}
 \item {\tt PI} and {\tt TPI}$=2\pi$ are defined and angular units {\tt DEGREE, ARCMIN, ARCSEC} are defined.  They give the size of each unit in radians.  The constant {\tt RadToArcsec} is the number of arcseconds in a radian.
 \item Time units {\tt YEAR, DAY, MINUTE, SECOND} are defined in the units of orbital mechanics, giving each in units of a year.  A {\tt DAY} is defined as exactly 86,400 {\tt SECOND}s and exactly $1/365.25$ {\tt YEAR}s.  {\tt MJD0} is the offset between Julian dates and modified Julian dates (MJD).
@@ -32,7 +43,7 @@ The class {\tt UT} represents a time.  There are many different kinds of time, a
 
 The {\tt -} operator is overloaded to yield the interval between two times.  The {\tt +=} and {\tt -=} operators are overloaded to allow time to be advanced/set back by a specified intervals.  Time intervals are in units of {\tt YEAR}s. 
 Subtracting/adding times is done in such a way as to account for leap
-seconds, though I do not gaurantee success if one of the times is within
+seconds, though I do not guarantee success if one of the times is within
 a minute or so of the leap second itself.  
 
 \subsection{Time systems}
@@ -49,7 +60,7 @@ Times are represented internally by a double-valued UTC JD.  Doubles
  have 52 bits mantissa, so JD should be accurate to 0.1 ms or better, which is $<$(TDB-TT).
 
 \subsection{I/O}
-The {\tt read()} method will recognize any of the following formats.  Any field can be represented by any number of digits.  Fields are separated by any whitespace.
+The \texttt{UT} object can be read or written from a stream.  Reading will recognize any of the following formats.  Any field can be represented by any number of digits.  Fields are separated by any whitespace.
 \begin{itemize}
 \item {\it jd.dddd} ---Julian date.  Any number $>$10,000 or having a decimal point in its first argument is interpreted as a JD.  No characters are read from the stream beyond the first field.
 \item{\it yr mo dd.dddd} ---if the third field has a decimal point, it is interpreted as a fractional date and no further fields are read.  Three fields must be present else the input stream is marked with {\tt failbit}.
@@ -66,7 +77,7 @@ The functions {\tt degdms} and {\tt deghms} return formatted string representati
 \section{Spherical coordinate systems}
 {\tt SphericalCoords} is an abstract base class for representing a location on the celestial sphere.  Every instance of the base class represents a well-defined position on the sky independent of coordinate systems.
 
-There are many derived classes, each tied to a specific 2-dimensional coordinate system on the sky, {\it e.g.} {\tt SphericalICRS} for RA/dec coordinates in the ICRS system, {\tt SphericalEcliptic} for ecliptic lon/lat coordinates.  Every derived class instance can be initialized or set using a pair of (longitude, latitude) values (or a {\tt Vector2} containing the 2 coordinates).  {\bf Coordinates are always assumed to be in radians, and the $x$ or longitude coordinate comes first.  However the conversions to/from strings and the overloaded stream operators will use units that depend on the coordinate system.}  For example the lon (lat) will be printed out in sexagesimal hours(degrees) by the base-class implementation, to follow tradition in representing RA and declination.
+There are many derived classes, each tied to a specific 2-dimensional coordinate system on the sky, {\it e.g.} {\tt SphericalICRS} for RA/dec coordinates in the ICRS system, {\tt SphericalEcliptic} for ecliptic lon/lat coordinates.  Every derived class instance can be initialized or set using a pair of (longitude, latitude) values, or a {\tt Vector2} containing the 2 coordinates.  {\bf Coordinates are always assumed to be in radians, and the $x$ or longitude coordinate comes first.  However the conversions to/from strings and the overloaded stream operators will use units that depend on the coordinate system.}  For example the lon (lat) will be printed out in sexagesimal hours(degrees) by the base-class implementation, to follow tradition in representing RA and declination.
 
 The {\tt distance} method gives the great-circle distance between any two {\tt SphericalCoords} instances.  This is well defined regardless of the coordinate systems of the two operands, since every {\tt SphericalCoords} represents a definitive position on the celestial sphere.
 
@@ -139,7 +150,7 @@ The {\tt read} and {\tt write} methods of {\tt Gnomonic} override the base class
 \subsection{{\tt Orientation} class}
 {\tt Orientation} defines a new point of view of the celestial sphere, {\it i.e.} a rotation of the sphere.  On construction one must specify a {\tt SphericalCoords} that will be the $z$ axis of the new viewpoint (the pole), and a double-valued position angle that will give the rotation angle of the $(x,y)$ coordinate system with respect to the local ICRS meridian at the pole.  ``Position angle'' or ``PA'' arguments are always in radians and give the angle of the y axis measured from north through east.  Since east corresponds to increasing RA, this convention means that PA is the negative of the usual mathematical convention of a rotation as being positive as the $x$ axis is rotated toward $y$.  The {\tt zrot} quantity stored by the class and accessible via {\tt getZRot} and {\tt setZRot} is the negation of the PA.
 
-The methods {\tt alignToEcliptic(), alignToICRS(),} and {\tt alignToInvariable()} are provided to set the $y$ axis to have the specified position angle (in radians, default$=0$) with respect to the local north directions in the respective coordinate systems.  {\tt alignToICRS()}.
+The methods {\tt alignToEcliptic(), alignToICRS(),} and {\tt alignToInvariable()} are provided to set the $y$ axis to have the specified position angle (in radians, default$=0$) with respect to the local north directions in the respective coordinate systems.  
 
 \subsubsection{Coordinate transformation}
 Each instance of {\tt Orientation} defines a new 3d coordinate system with new axes.  The method {\tt m()} returns a reference to a {\tt Matrix33} that converts a {\tt Vector3} in the ICRS system to a {\tt Vector3} in the newly oriented coordinate system (a rotation matrix).  This works, in particular, for unit vectors that represent directions on the celestial sphere.  In other words, if {\tt xICRS} is a {\tt Vector3} giving the ICRS direction cosines of a point on the celestial sphere, then {\tt orient.m()*xICRS} will be a {\tt Vector3} giving the direction cosines in the coordinate system described by {\tt orient}.
@@ -164,9 +175,65 @@ icrs.getLonLat(raStar, decStar);
 \end{verbatim}
 If you wanted to transform coordinate in the other direction, you create the {\tt icrs} object first, then create {\tt Gnomonic tp(icrs,orient)} to effect the conversion.  {\tt tp.getLonLat(xi,eta)} would put the tangent-plane coordinates (in radians) into variables {\tt xi} and {\tt eta}.
 
+\subsection{YAML serialization}
+The \texttt{SphericalCoords} class structure admits serialization and deserialization of celestial sphere locations to and from YAML nodes.  The serialized syntax is easy to read, and easy to write if you know the names of the fields required for a given type of coordinate.  In the code, writing to a \texttt{YAML::Emitter em} is simple, one can do either of these:
+\begin{verbatim}
+coord.serialize(em);
+os << coord;
+\end{verbatim}
+
+When deserializing, the returned object could be of any derived type, so there is a base-class ``factory'' method returning a pointer to the base class:
+\begin{verbatim}
+SphericalCoords* SphericalCoords::deserialize(YAML::Node& node);
+\end{verbatim}
+
+For this to work, each derived class must implement three functions:
+\begin{verbatim}
+virtual void serialize(YAML::Emitter& os) const;
+static string type() {return "ICRS";}
+static SphericalCoords* create(const YAML::Node& node);
+\end{verbatim}
+The first function will add a map node to the YAML emitter stream.  One key in the map must be the string \texttt{``Type''}, which will match the return of the \texttt{type()} function.  The remaining keys in the node depend upon the derived type.  Here for example is the serialized version of a \texttt{SphericalICRS} instance:
+\begin{verbatim}
+Type:  ICRS
+RA:    90.34
+Dec:   120.55922
+\end{verbatim}
+or a gnomonic system:
+\begin{verbatim}
+Type: Gnomonic
+Orientation:
+ RA: 112.5
+ Dec: -50
+ PA: 0
+Xi: 12.4
+Eta: -1.66
+\end{verbatim}
+The serialization of \texttt{Gnomonic} coordinates requires serialization of the orientation---the \texttt{Orientation} class has its own (de-)serialization routines, always done in ICRS coordinates, which produces a sub-node as the value associated with the \texttt{Orientation} key in map.
+
+The \texttt{create()} function of each derived class must be capable of reading the YAML node that it produces in its \texttt{serialize()} function, and returning a pointer to an instance of itself.  Some of the classes allow for defaults, e.g. to $(0,0)$ coordinates if none are given.
+
+The base class has the static \texttt{deserialize} factory function, which dispatches the node to the appropriate derived-class \texttt{create()} function based on the value of the \texttt{Type} field in the node.  For this to work, each possible derived type must be ``registered'' with the base-class factory.  For some class \texttt{Derived} this is done with this line of code:
+\begin{verbatim}
+SphericalCoords::registerType<Derived>();
+\end{verbatim}
+and, for convenience, all of the built-in derived types are automatically registered, so the above call is needed only if you derive a new type of \texttt{SphericalCoords}.
+
+
 \section{Cartesian coordinates}
 Locations in 3d space are represented as instances of the abstract base class {\tt CartesianCoords}. Every instance of the base class represents a definitive point in space, but the coordinate system used depends upon the type of derived class for the instance, in the same way the {\tt SphericalCoords} works for locations on the celestial sphere.  The method {\tt getVector()} returns a 3-vector giving the position in the system specified by the derived class.  The distance units for {\tt CartesianCoords} are not specified in the code, so the user needs to maintain consistency.  All of the orbital-mechanics code will assume units of AU.
 
-???? continue this....
+The base \texttt{CartesianCoords} class overloads addition and subtraction of an arbitrary \texttt{Vector3},  multiplication by a scalar, and basic read/write overlaps from a stream as triples of floating-point values.  Addition and subtraction of \texttt{CartesianCoords} from each other is allowed only within the same derived class.
+
+There are \texttt{CartesianICRS, CartesianEcliptic,} and \texttt{CartesianInvariable} derived classes, with each system's axes oriented as befits its name.  Conversions between Cartesian systems occurs exactly as for \texttt{SphericalCoords}, namely that one simply constructs an object in the new system from an object in the old system. 
+
+The \texttt{ReferenceFrame} object describes a particular frame of reference in 3d space, as specified on construction by the \texttt{CartesianCoords} of its origin and the \texttt{Orientation} of the three axes emanating from the origin.  
+
+The \texttt{CartesianCustom} class is derived from \texttt{CartesianCoords}.  Akin the \texttt{SphericalCustom}, its coordinates are given in the system defined by a \texttt{ReferenceFrame} that is provided on construction.
+
+Each of the \texttt{SphericalI*} classes can be constructed from an instance of its corresponding \texttt{Cartesian*} class, which yields the spherical coordinates viewed from the origin of the corresponding system.  Thus once again there are no explicit conversion codes, one merely creates an object in the spherical system from one in the 3d system.
+
+\section{Orbits}
+
 
 \end{document}
