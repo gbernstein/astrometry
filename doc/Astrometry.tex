@@ -15,7 +15,8 @@
 \hspace*{\fill}Revision: 28 March 2017
 
 \section{Introduction}
-The \texttt{astrometry} repository contains code for manipulation of time, angular, and 3d coordinates, which are documented here.  The repository also contains code for specifying parametric transformations of 2d coordinates; these are documented in the \textit{PixelMap} document.
+The \texttt{astrometry} repository contains code for manipulation of time, angular, and 3d coordinates, which are documented here.  The \texttt{Ephemeris} file implements an interface to the JPL Horizons planetary ephemerides, as  well as an orbit integrators and representations of phase-space positions of bodies for use with the Bernstein-Kushalani orbit-fitting code, should anyone ever try to implement this in \cpp.  We won't document those codes until they're in regular use.
+The repository also contains code for specifying parametric transformations of 2d coordinates; these are documented in the \textit{PixelMap} document.
 
 \section{Dependences}
 All routines described here are placed in the {\tt astrometry} namespace.  All exceptions are thrown as the {\tt AstrometryError} class, which is derived from {\tt std::runtime\_error}.  
@@ -231,9 +232,5 @@ The \texttt{ReferenceFrame} object describes a particular frame of reference in 
 
 The \texttt{CartesianCustom} class is derived from \texttt{CartesianCoords}.  Akin the \texttt{SphericalCustom}, its coordinates are given in the system defined by a \texttt{ReferenceFrame} that is provided on construction.
 
-Each of the \texttt{SphericalI*} classes can be constructed from an instance of its corresponding \texttt{Cartesian*} class, which yields the spherical coordinates viewed from the origin of the corresponding system.  Thus once again there are no explicit conversion codes, one merely creates an object in the spherical system from one in the 3d system.
-
-\section{Orbits}
-
-
+Each of the \texttt{Spherical*} classes can be constructed from an instance of its corresponding \texttt{Cartesian*} class, which yields the spherical coordinates viewed from the origin of the corresponding system.  Thus once again there are no explicit conversion codes, one merely creates an object in the spherical system from one in the 3d system.
 \end{document}
