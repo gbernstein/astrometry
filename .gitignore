@@ -1,3 +1,9 @@
+# doc stuff
+*.log
+*.aux
+doc/Astrometry.pdf
+doc/PixelMap.pdf
+
 # Compiled Object files
 *.slo
 *.lo
