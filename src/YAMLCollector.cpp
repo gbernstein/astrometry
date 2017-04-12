@@ -175,6 +175,9 @@ YAMLCollector::addMap(string name, const Dictionary& dict) {
 #pragma omp critical(yamlout)
 #endif
   {
+    // If multithreading, it's possible the node will have been created since
+    // we checked that it's absent.  That should be harmless as it will be replaced
+    // here with a fresh copy.
     out[name] = mapNode;
   }
   if (mapNode["Type"].as<string>() == "Composite") {
