@@ -26,8 +26,9 @@ $(error Require YAML_DIR in environment)
 endif
 
 ifdef GBUTIL_DIR
-INCLUDES += -I $(GBUTIL_DIR)
+INCLUDES += -I $(GBUTIL_DIR)/include
 EXTDIRS += $(GBUTIL_DIR)
+GBUTIL_OBJ = $(GBUTIL_DIR)/obj
 else
 $(error Require GBUTIL_DIR in environment)
 endif
@@ -49,7 +50,7 @@ INCLUDES += -I $(MKL_DIR)/include -D USE_MKL
 endif
 
 # Object files found in external packages, :
-EXTOBJS =$(GBUTIL_DIR)/StringStuff.o $(GBUTIL_DIR)/Poly2d.o $(GBUTIL_DIR)/Lookup1d.o
+EXTOBJS =$(GBUTIL_OBJ)/StringStuff.o $(GBUTIL_OBJ)/Poly2d.o $(GBUTIL_OBJ)/Lookup1d.o
 
 ##### 
 BINDIR = bin
