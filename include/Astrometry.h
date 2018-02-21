@@ -63,7 +63,7 @@ namespace astrometry {
     UT(double jd_) {set(jd_);}
     UT(int y_, int m_, double d_) {set(y_,m_,d_);}
     UT(int y_, int m_, int d_, int h_, int min_, double s_) {
-      set(y_,m_,d_,h_,m_,s_);
+      set(y_,m_,d_,h_,min_,s_);
     }
     void set(double jd_);
     void set(int y_, int m_, double d_) ;

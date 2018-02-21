@@ -179,6 +179,7 @@ namespace astrometry {
       throw AstrometryError("Bad second specification");
     y=y_; mo=m_; 
     d=d_ + (h_+(min_+s_/60.)/60.)/24.;
+    /**/cerr << "y,m,d: " << y << " " << mo << " " << d << endl;
     ymdValid=true; 
     buildJD();
   }
@@ -188,11 +189,7 @@ namespace astrometry {
     if (!ymdValid)
       throw AstrometryError("Attempt to find JD for uninitialized UT");
     // Following is taken from Skycalc:
-    /* From Meeus' Astronomical Formulae for Calculators.  The two JD
-       conversion routines routines were replaced 1998 November 29 to
-       avoid inclusion of copyrighted "Numerical Recipes" code.  A test
-       of 1 million random JDs between 1585 and 3200 AD gave the same
-       conversions as the NR routines. */
+    /* From Meeus' Astronomical Formulae for Calculators. */
     int y0, m0;
     long A, B;
   
