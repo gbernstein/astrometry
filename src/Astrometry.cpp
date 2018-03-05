@@ -435,6 +435,38 @@ namespace astrometry {
     return dest;
   }
 
+  // Caches for transformations to/from fixed frames
+  Matrix33*
+  SphericalEcliptic::icrs2ecliptic = nullptr;
+  Matrix33*
+  SphericalInvariable::icrs2invariable = nullptr;
+
+  void
+  SphericalEcliptic::setup() {
+    if (icrs2ecliptic) return;
+    // Use rotation routines to build ecliptic rotation
+    icrs2ecliptic = new Matrix33;
+    Vector3 dummy;
+    rotateToPole(dummy,
+		 EclipticInclination,
+		 EclipticNode,
+		 icrs2ecliptic);
+  }
+
+  void
+  SphericalInvariable::setup() {
+    if (icrs2invariable) return;
+    // Use rotation routines to build ecliptic rotation
+    icrs2invariable = new Matrix33;
+    Vector3 dummy;
+    rotateToPole(dummy,
+		 InvariableInclination,
+		 InvariableNode,
+		 icrs2invariable);
+  }
+  
+    
+
   ////////////////////////////////////////////////////////////////
   ////////////////////////////////////////////////////////////////
   void
@@ -490,36 +522,32 @@ namespace astrometry {
   void
   CartesianEcliptic::convertFromICRS(const Vector3& xeq, 
 				   Matrix33* partials) {
-    setVector( rotateToPole(xeq,
-			    EclipticInclination,
-			    EclipticNode,
-			    partials) );
+    SphericalEcliptic::setup();  // Check rotation matrix
+    setVector( *SphericalEcliptic::icrs2ecliptic * xeq);
+    if (partials) *partials = *SphericalEcliptic::icrs2ecliptic;
   }
+
   Vector3
   CartesianEcliptic::convertToICRS(Matrix33* partials) const {
-    Vector3 xec=getVector();
-    return  rotateFromPole(xec,
-			 EclipticInclination,
-			 EclipticNode,
-			 partials);
+    SphericalEcliptic::setup();  // Check rotation matrix
+    if (partials) *partials = SphericalEcliptic::icrs2ecliptic->transpose();
+    return SphericalEcliptic::icrs2ecliptic->transpose() * getVector();
   }
+
   void
   CartesianInvariable::convertFromICRS(const Vector3& xeq, 
 				   Matrix33* partials) {
-    setVector( rotateToPole(xeq,
-			    InvariableInclination,
-			    InvariableNode,
-			    partials) );
-  }
-  Vector3
-  CartesianInvariable::convertToICRS(Matrix33* partials) const {
-    Vector3 xec=getVector();
-    return  rotateFromPole(xec,
-			 InvariableInclination,
-			 InvariableNode,
-			 partials);
+    SphericalInvariable::setup();  // Check rotation matrix
+    setVector( *SphericalInvariable::icrs2invariable * xeq);
+    if (partials) *partials = *SphericalInvariable::icrs2invariable;
   }
 
+  Vector3
+  CartesianInvariable::convertToICRS(Matrix33* partials) const {
+    SphericalInvariable::setup();  // Check rotation matrix
+    if (partials) *partials = SphericalInvariable::icrs2invariable->transpose();
+    return SphericalInvariable::icrs2invariable->transpose() * getVector();
+  }
 
   void
   CartesianCustom::convertFromICRS(const Vector3& xeq, 
@@ -557,15 +585,44 @@ namespace astrometry {
     convertFrom(rhs, partials);
   }
 
+  CartesianCustom::CartesianCustom(const ReferenceFrame& ref_,
+				   bool shareFrame): ref(&ref_), ownFrame(false) {
+    if (!shareFrame) {
+      ref = new ReferenceFrame(ref_);
+      ownFrame = true;
+    } 
+  }
+
+  CartesianCustom::CartesianCustom(const Vector3& x_,
+				   const ReferenceFrame& ref_,
+				   bool shareFrame): ref(&ref_),
+						     ownFrame(false),
+						     CartesianCoords(x_) {
+    if (!shareFrame) {
+      ref = new ReferenceFrame(ref_);
+      ownFrame = true;
+    } 
+  }
+  
   CartesianCustom::CartesianCustom(const CartesianCoords& rhs,
-				   const ReferenceFrame& r):
-    ref(&r) {
+				   const ReferenceFrame& ref_,
+				   bool shareFrame): ref(&ref_),
+						     ownFrame(false) {
+    if (!shareFrame) {
+      ref = new ReferenceFrame(ref_);
+      ownFrame = true;
+    } 
     convertFrom(rhs);
   }
   CartesianCustom::CartesianCustom(const CartesianCoords& rhs, 
-				   const ReferenceFrame& r,
-				   Matrix33& partials):
-    ref(&r) {
+				   const ReferenceFrame& ref_,
+				   Matrix33& partials,
+				   bool shareFrame): ref(&ref_),
+						     ownFrame(false) {
+    if (!shareFrame) {
+      ref = new ReferenceFrame(ref_);
+      ownFrame = true;
+    } 
     convertFrom(rhs, partials);
   }
 
@@ -745,37 +802,32 @@ namespace astrometry {
   void
   SphericalEcliptic::convertFromICRS(const Vector3& xeq, 
 				   Matrix33* partials) {
-    setUnitVector( rotateToPole(xeq,
-				  EclipticInclination,
-				  EclipticNode,
-				  partials) );
+    setup(); // Check rotation matrix
+    setUnitVector( (*icrs2ecliptic) * xeq);
+    if (partials) *partials = *icrs2ecliptic;
   }
+
   Vector3
   SphericalEcliptic::convertToICRS(Matrix33* partials) const {
-    Vector3 xec=getUnitVector();
-    return  rotateFromPole(xec,
-			 EclipticInclination,
-			 EclipticNode,
-			 partials);
+    setup();
+    if (partials) *partials = icrs2ecliptic->transpose();
+    return icrs2ecliptic->transpose() * getUnitVector();
   }
 
   void
   SphericalInvariable::convertFromICRS(const Vector3& xeq, 
 				   Matrix33* partials) {
-    setUnitVector( rotateToPole(xeq,
-				  InvariableInclination,
-				  InvariableNode,
-				  partials) );
+    setup(); // Check rotation matrix
+    setUnitVector( (*icrs2invariable) * xeq);
+    if (partials) *partials = *icrs2invariable;
   }
+  
   Vector3
   SphericalInvariable::convertToICRS(Matrix33* partials) const {
-    Vector3 xec=getUnitVector();
-    return  rotateFromPole(xec,
-			 InvariableInclination,
-			 InvariableNode,
-			 partials);
+    setup();
+    if (partials) *partials = icrs2invariable->transpose();
+    return icrs2invariable->transpose() * getUnitVector();
   }
-
 
   void
   Orientation::buildMatrix() {
@@ -1033,7 +1085,7 @@ namespace astrometry {
     projectIt(rhs);
   }
   SphericalCustomBase::SphericalCustomBase(const CartesianCustom& rhs,
-				   Matrix33& partials):
+					   Matrix33& partials):
     orient(&(rhs.getFrame()->orient)),
     ownOrient(false) {
     projectIt(rhs, &partials);

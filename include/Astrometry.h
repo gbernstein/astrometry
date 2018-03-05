@@ -256,6 +256,12 @@ namespace astrometry {
     virtual void serialize(YAML::Emitter& os) const;
     static string type() {return "Ecliptic";}
     static SphericalCoords* create(const YAML::Node& node);
+
+  private:
+    // Save the (fixed) transformation matrices for ICRS->ecliptic
+    static Matrix33* icrs2ecliptic;
+    static void setup();  // check matrix and calculate if needed
+    friend class CartesianEcliptic;  // Cartesian will share this matrix
   };
 
   class SphericalInvariable: public SphericalCoords {
@@ -280,7 +286,13 @@ namespace astrometry {
     virtual void serialize(YAML::Emitter& os) const;
     static string type() {return "Invariable";}
     static SphericalCoords* create(const YAML::Node& node);
-  };
+
+  private:
+    // Save the (fixed) transformation matrices for ICRS->ecliptic
+    static Matrix33* icrs2invariable;
+    static void setup();  // check matrix and calculate if needed
+    friend class CartesianInvariable;  // Cartesian will share this matrix
+};
 
   // Define an arbitrary reference pole and orientation
   class Orientation {
@@ -480,13 +492,15 @@ namespace astrometry {
   // Spatial and angular coordinate systems
   //////////////////////////////////////////////////////////
 
-  // Base class for 3d Cartesian systems
+  // Base class for 3d Cartesian systems.
+  // Note that +=, -= only defined within same well-defined CartesianCoords,
+  // as we are not doing implied transformations for arithmetic.
+  // Give Vector3 if you want to add/subtract.
   class CartesianCoords {
   protected:
     Vector3 x;
-    void plusEq(const CartesianCoords& rhs) {x+=rhs.x;}
-    void minusEq(const CartesianCoords& rhs) {x-=rhs.x;}
-    // partials in these equations are 3x3 unit vector xforms:
+
+    // partials in these equations are 3x3 vector xforms:
     virtual Vector3 convertToICRS(Matrix33* partials=0) const=0;
     virtual void convertFromICRS(const Vector3& xeq, 
 			       Matrix33* partials=0) =0;
@@ -542,7 +556,7 @@ namespace astrometry {
   public:
     CartesianICRS() {}
     CartesianICRS(const Vector3& x_): CartesianCoords(x_) {}
-
+    CartesianICRS(double x_, double y_, double z_): CartesianCoords(x_,y_,z_) {}
     // Constructor with coordinate transformation:
     explicit CartesianICRS(const CartesianCoords& rhs); 
     explicit CartesianICRS(const CartesianCoords& rhs, Matrix33& partials); 
@@ -552,10 +566,12 @@ namespace astrometry {
     }
 
     const CartesianICRS& operator+=(const CartesianICRS& rhs) {
-      plusEq(rhs); return *this;
+      x += rhs.x;
+      return *this;
     }
     const CartesianICRS& operator-=(const CartesianICRS& rhs) {
-      minusEq(rhs); return *this;
+      x -= rhs.x;
+      return *this;
     }
   };
 
@@ -566,16 +582,19 @@ namespace astrometry {
   public:
     CartesianEcliptic() {}
     CartesianEcliptic(const Vector3& x_): CartesianCoords(x_) {}
+    CartesianEcliptic(double x_, double y_, double z_): CartesianCoords(x_,y_,z_) {}
 
     // Constructor with coordinate transformation:
     explicit CartesianEcliptic(const CartesianCoords& rhs); 
     explicit CartesianEcliptic(const CartesianCoords& rhs, Matrix33& partials); 
 
     const CartesianEcliptic& operator+=(const CartesianEcliptic& rhs) {
-      plusEq(rhs); return *this;
+      x += rhs.x;
+      return *this;
     }
     const CartesianEcliptic& operator-=(const CartesianEcliptic& rhs) {
-      minusEq(rhs); return *this;
+      x -= rhs.x;
+      return *this;
     }
   };
 
@@ -593,10 +612,12 @@ namespace astrometry {
 				 Matrix33& partials); 
 
     const CartesianInvariable& operator+=(const CartesianInvariable& rhs) {
-      plusEq(rhs); return *this;
+      x += rhs.x;
+      return *this;
     }
     const CartesianInvariable& operator-=(const CartesianInvariable& rhs) {
-      minusEq(rhs); return *this;
+      x -= rhs.x;
+      return *this;
     }
   };
 
@@ -626,28 +647,26 @@ namespace astrometry {
   class CartesianCustom: public CartesianCoords {
   private:
     const ReferenceFrame* ref;
+    bool ownFrame;
     virtual Vector3 convertToICRS(Matrix33* partials=0) const;
     virtual void convertFromICRS(const Vector3& xeq, Matrix33* partials=0);
   public:
-    CartesianCustom(const ReferenceFrame& r): ref(&r) {}
+    CartesianCustom(const ReferenceFrame& ref_, bool shareFrame=false);
     CartesianCustom(const Vector3& x_,
-		    const ReferenceFrame& r): ref(&r), CartesianCoords(x_) {}
+		    const ReferenceFrame& ref_,
+		    bool shareFrame=false);
+    ~CartesianCustom() {if (ownFrame) delete ref;}
 
     // Constructor with coordinate transformation:
     explicit CartesianCustom(const CartesianCoords& rhs,
-			     const ReferenceFrame& r); 
+			     const ReferenceFrame& ref_,
+			     bool shareFrame=false); 
     explicit CartesianCustom(const CartesianCoords& rhs, 
-			     const ReferenceFrame& r, 
-			     Matrix33& partials); 
-
+			     const ReferenceFrame& ref_, 
+			     Matrix33& partials,
+			     bool shareFrame=false); 
 
     const ReferenceFrame* getFrame() const {return ref;}
-    const CartesianCustom& operator+=(const CartesianCustom& rhs) {
-      plusEq(rhs); return *this;
-    }
-    const CartesianCustom& operator-=(const CartesianCustom& rhs) {
-      minusEq(rhs); return *this;
-    }
   };
 
 } //namespace astrometry
