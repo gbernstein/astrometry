@@ -132,6 +132,7 @@ namespace astrometry {
     void projectIt(const CartesianCoords& rhs,
 		   Matrix23* partials);
   public:
+    EIGEN_NEW
     SphericalCoords();
     SphericalCoords(double lon, double lat);
     virtual ~SphericalCoords() {};
@@ -297,6 +298,7 @@ namespace astrometry {
   // Define an arbitrary reference pole and orientation
   class Orientation {
   public:
+    EIGEN_NEW
     Orientation(const SphericalCoords& pole_, double pa=0.);
     Orientation(): pole(), zrot(0.) {buildMatrix();}
     const Orientation& operator=(const Orientation& rhs) {
@@ -387,7 +389,8 @@ namespace astrometry {
 				 const Orientation& o,
 				 Matrix33& partials,
 				 bool shareOrient);
-    // For now, conversion from CartesianCustom will share the ReferenceFrame's Orientation:
+    // Conversion from CartesianCustom will set the sharing status of Orientation
+    // to whatever the ReferenceFrame's shareFrame is.
     explicit SphericalCustomBase(const CartesianCustom& rhs);
     explicit SphericalCustomBase(const CartesianCustom& rhs, Matrix33& partials);
 
@@ -505,6 +508,7 @@ namespace astrometry {
     virtual void convertFromICRS(const Vector3& xeq, 
 			       Matrix33* partials=0) =0;
   public:
+    EIGEN_NEW
     CartesianCoords(): x(0.) {}
     CartesianCoords(double x_, double y_, double z_) {
       x[0]=x_; x[1]=y_; x[2]=z_;
@@ -643,13 +647,16 @@ namespace astrometry {
   std::ostream& operator<<(std::ostream& os, const ReferenceFrame& rhs);
   std::istream& operator>>(std::istream& is, ReferenceFrame& rhs);
 
-  // ??? Reference Frame ownership needs to be clarified
+  // On creation, if shareFrame=false, a private duplicate of the ReferenceFrame
+  // will be created (and destroyed along with this object).  See discussion
+  // above at SphericalCustom for more details.
   class CartesianCustom: public CartesianCoords {
   private:
     const ReferenceFrame* ref;
     bool ownFrame;
     virtual Vector3 convertToICRS(Matrix33* partials=0) const;
     virtual void convertFromICRS(const Vector3& xeq, Matrix33* partials=0);
+    friend class SphericalCustomBase;  // Friend so that Spherical can check ownFrame
   public:
     CartesianCustom(const ReferenceFrame& ref_, bool shareFrame=false);
     CartesianCustom(const Vector3& x_,

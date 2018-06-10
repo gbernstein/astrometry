@@ -465,8 +465,6 @@ namespace astrometry {
 		 icrs2invariable);
   }
   
-    
-
   ////////////////////////////////////////////////////////////////
   ////////////////////////////////////////////////////////////////
   void
@@ -1082,12 +1080,20 @@ namespace astrometry {
   SphericalCustomBase::SphericalCustomBase(const CartesianCustom& rhs):
     orient(&(rhs.getFrame()->orient)),
     ownOrient(false) {
+    if (rhs.ownFrame) {
+      orient = new Orientation(rhs.getFrame()->orient);
+      ownOrient = true;
+    }
     projectIt(rhs);
   }
   SphericalCustomBase::SphericalCustomBase(const CartesianCustom& rhs,
 					   Matrix33& partials):
     orient(&(rhs.getFrame()->orient)),
     ownOrient(false) {
+    if (rhs.ownFrame) {
+      orient = new Orientation(rhs.getFrame()->orient);
+      ownOrient = true;
+    }
     projectIt(rhs, &partials);
   }
 
