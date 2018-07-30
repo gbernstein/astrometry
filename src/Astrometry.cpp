@@ -1259,6 +1259,7 @@ namespace astrometry {
   }
 
 
+#ifdef USE_YAML
   // YAML (de-)serialization routines.
   // First these are the structure that holds the names and creators for
   // all possible types of Spherical coordinates, and a routine
@@ -1457,6 +1458,7 @@ namespace astrometry {
     delete orient;
     return out;
   }
-  
+
+#endif
 
 } // namespace astrometry

@@ -19,10 +19,10 @@ EXTDIRS :=
 
 # Collect the includes and libraries we need
 ifdef YAML_DIR
-INCLUDES += -I $(YAML_DIR)/include
+INCLUDES += -I $(YAML_DIR)/include -D USE_YAML
 LIBS += -L $(YAML_DIR)/lib -lyaml-cpp
 else
-$(error Require YAML_DIR in environment)
+$(warning WARNING: Compiling astrometry without YAML serializations)
 endif
 
 ifdef GBUTIL_DIR

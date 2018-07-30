@@ -6,6 +6,8 @@
 
 using namespace astrometry;
 
+#ifdef USE_YAML  // Don't build any of this without YAML
+
 // The word that we expect all serialized collections to have on their first line
 const string
 PixelMapCollection::magicKey = "PixelMapCollection";
@@ -906,3 +908,5 @@ PixelMapCollection::parameterIndicesOf(string mapname,
   nParams = mel.nParams;
   return;
 }
+
+#endif // USE_YAML

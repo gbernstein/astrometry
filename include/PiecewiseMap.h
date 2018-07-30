@@ -73,11 +73,13 @@ namespace astrometry {
     static string type() {return "Piecewise";}
     virtual string getType() const {return type();}
 
+#ifdef USE_YAML
     static PixelMap* create(const YAML::Node& node,
 			    bool& defaulted,
 			    string name_="");
     virtual void write(YAML::Emitter& os) const;
-
+#endif
+    
   private:
     string name;
 

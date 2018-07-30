@@ -249,6 +249,7 @@ SubMap::getPixelStep() const {
 }
 
   
+#ifdef USE_YAML
 // Serialization (here for completeness only; current chains are
 // serialized through PixelMapCollection::writeSingleMap
 void
@@ -264,4 +265,4 @@ SubMap::write(YAML::Emitter& os) const {
   os << YAML::EndMap;
   return;
 }
-  
+#endif

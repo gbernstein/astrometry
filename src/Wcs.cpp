@@ -202,6 +202,7 @@ Wcs::toPixDerivs( double xworld, double yworld,
   delete nc;
 }
 
+#ifdef USE_YAML
 void
 Wcs::write(YAML::Emitter& os) const {
   os << YAML::BeginMap
@@ -214,3 +215,4 @@ Wcs::write(YAML::Emitter& os) const {
   os << YAML::EndMap;
   return;
 }
+#endif

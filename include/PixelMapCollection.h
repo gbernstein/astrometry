@@ -22,10 +22,16 @@
 #include <set>
 using std::list;
 #include <string>
+#include <vector>
+
 #include "Std.h"
-#include "yaml-cpp/yaml.h"
 #include "PixelMap.h"
 #include "Wcs.h"
+// Note that these classes won't be very useful without YAML for serialization, but
+// we do want to be able to compile the repo without it.  No PixelMapCollection at all.
+#ifdef USE_YAML
+#include "yaml-cpp/yaml.h"
+#endif
 
 namespace astrometry {
 
@@ -108,9 +114,12 @@ namespace astrometry {
 
     virtual bool needsColor() const {return anyColor;}
     
+#ifdef USE_YAML
     void write(YAML::Emitter& os) const;
+#endif
   };
   
+#ifdef USE_YAML
   class PixelMapCollection {
   public:
     // add some or all maps from another collection
@@ -170,7 +179,7 @@ namespace astrometry {
     // The read returns false if the stream does not begin with the magicWord for
     // serialized PixelMapCollections. True if success; throws exception for format errors.
     bool read(istream& is, string namePrefix=""); // prefix added to names of all elements
-
+    
     // Fix or free parameters associated with one or more PixelMap(s).
     // If the chosen map is compound, all components are frozen.
     // This will change parameter index assignments in all issued SubMaps and Wcs's
@@ -313,9 +322,9 @@ namespace astrometry {
     static bool creatorsInitialized;
     // Call to give parser an initial inventory of map types to create:
     static void PixelMapTypeInitialize();
-
   };
 
+#endif  // end USE_YAML
 
 } // namespace astrometry
 #endif

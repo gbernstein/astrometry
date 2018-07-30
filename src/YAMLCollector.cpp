@@ -1,6 +1,8 @@
 #include "YAMLCollector.h"
 #include "StringStuff.h"
 
+#ifdef USE_YAML  // None of this is built without YAML
+
 using namespace astrometry;
 using namespace stringstuff;
 
@@ -217,7 +219,4 @@ YAMLCollector::dump() const {
   return os.c_str();
 }
 
-  
-      
-      
-    
+#endif

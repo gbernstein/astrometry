@@ -45,8 +45,10 @@ namespace astrometry {
     // the wrapped PixelMap.  No create() here; this will be handled via
     // PixelMapCollection in current code.
     
+#ifdef USE_YAML
     virtual void write(YAML::Emitter& os) const; 
-
+#endif
+    
     virtual void toWorld(double xpix, double ypix,
 			 double& xworld, double& yworld,
 			 double color=astrometry::NODATA) const;

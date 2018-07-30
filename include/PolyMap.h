@@ -6,8 +6,10 @@
 
 #include "PixelMap.h"
 #include "Poly2d.h"
-#include "yaml-cpp/yaml.h"
 #include "Bounds.h"
+#ifdef USE_YAML
+#include "yaml-cpp/yaml.h"
+#endif
 
 namespace astrometry {
 
@@ -83,11 +85,13 @@ namespace astrometry {
 		   
     static string type() {return "Poly";}
     virtual string getType() const {return type();}
+#ifdef USE_YAML
     static PixelMap* create(const YAML::Node& node,
 			    bool& defaulted,
 			    string name="");
     void write(YAML::Emitter& os) const;
-
+#endif
+    
   private:
     poly2d::Poly2d xpoly;
     poly2d::Poly2d ypoly;
@@ -142,11 +146,12 @@ namespace astrometry {
 
     static string type() {return "Linear";}
     virtual string getType() const {return type();}
+#ifdef USE_YAML
     static PixelMap* create(const YAML::Node& node,
 			    bool& defaulted,
 			    string name="");
     void write(YAML::Emitter& os) const;
-
+#endif
   private:
     // Forward and inverse transformations are always kept in sync
     const static int DIM=6;

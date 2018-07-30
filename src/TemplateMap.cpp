@@ -223,6 +223,7 @@ TemplateMap::dWorlddPix(double xpix, double ypix,
 ////////////////////////////////////////////////////////////////////////////////////
 // YAML (de-)serialization
 ////////////////////////////////////////////////////////////////////////////////////
+#ifdef USE_YAML
 
 void
 TemplateMap::write(YAML::Emitter& os) const {
@@ -273,3 +274,4 @@ TemplateMap::create(const YAML::Node& node,
   return out;
 }
 
+#endif

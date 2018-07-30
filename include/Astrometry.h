@@ -5,7 +5,9 @@
 #include "Std.h"
 #include "LinearAlgebra.h"
 #include "AstronomicalConstants.h"
+#ifdef USE_YAML
 #include "yaml-cpp/yaml.h"
+#endif
 #include <iostream>
 #include <string>
 #include <stdexcept>
@@ -141,6 +143,7 @@ namespace astrometry {
     virtual void write(std::ostream& os, int decimalPlaces=3) const;
     virtual void read(std::istream& is);
     
+#ifdef USE_YAML
     // YAML serialization
     virtual void serialize(YAML::Emitter& os) const=0;
     // YAML de-serialization yields pointer to base class
@@ -157,6 +160,7 @@ namespace astrometry {
       initializeTypemap();
       typemap[Derived::type()] = Derived::create;
     }
+#endif
 
     Vector3 getUnitVector() const {return x;}
     void setUnitVector(const Vector3& x_);
@@ -185,11 +189,13 @@ namespace astrometry {
     double distance(const SphericalCoords& rhs) const;
 
   private:
+#ifdef USE_YAML
     // Static map of the types of SphericalCoords that can be
     // deserialied from YAML
     static std::map<string,Creator> typemap;
     // Load the map with known SphericalCoord types
     static void initializeTypemap();
+#endif
   };
 
   inline std::ostream& operator<<(std::ostream& os, const SphericalCoords& rhs) {
@@ -201,11 +207,13 @@ namespace astrometry {
     return(is);
   }
 
+#ifdef USE_YAML
   inline YAML::Emitter& operator<<(YAML::Emitter& os, const SphericalCoords& rhs)  {
     rhs.serialize(os);
     return os;
   }
-
+#endif
+  
   class SphericalICRS: public SphericalCoords {
   protected:
     virtual Vector3 convertToICRS(Matrix33* partials=0) const;
@@ -228,11 +236,12 @@ namespace astrometry {
     void getRADec(double& ra, double& dec) const {getLonLat(ra, dec);}
     void setRADec(double ra, double dec) {setLonLat(ra,dec);}
 
+#ifdef USE_YAML
     // Serialization
     virtual void serialize(YAML::Emitter& os) const;
     static string type() {return "ICRS";}
     static SphericalCoords* create(const YAML::Node& node);
-    
+#endif    
 
   };
 
@@ -253,11 +262,12 @@ namespace astrometry {
     explicit SphericalEcliptic(const CartesianEcliptic& rhs);
     explicit SphericalEcliptic(const CartesianEcliptic& rhs, Matrix33& partials);
 
+#ifdef USE_YAML
     // Serialization
     virtual void serialize(YAML::Emitter& os) const;
     static string type() {return "Ecliptic";}
     static SphericalCoords* create(const YAML::Node& node);
-
+#endif
   private:
     // Save the (fixed) transformation matrices for ICRS->ecliptic
     static Matrix33* icrs2ecliptic;
@@ -283,11 +293,12 @@ namespace astrometry {
     explicit SphericalInvariable(const CartesianInvariable& rhs, 
 				 Matrix33& partials);
 
+#ifdef USE_YAML
     // Serialization
     virtual void serialize(YAML::Emitter& os) const;
     static string type() {return "Invariable";}
     static SphericalCoords* create(const YAML::Node& node);
-
+#endif
   private:
     // Save the (fixed) transformation matrices for ICRS->ecliptic
     static Matrix33* icrs2invariable;
@@ -327,8 +338,10 @@ namespace astrometry {
 
     void write(std::ostream& os) const;
     void read(std::istream& is);
+#ifdef USE_YAML
     void serialize(YAML::Emitter& os) const;
     static Orientation* create(const YAML::Node& node);
+#endif
     
   private:
     SphericalICRS pole;
@@ -345,11 +358,12 @@ namespace astrometry {
     o.read(is);
     return is;
   }
+#ifdef USE_YAML
   inline YAML::Emitter& operator<<(YAML::Emitter& os, const Orientation& rhs)  {
     rhs.serialize(os);
     return os;
   }
-
+#endif
 
   // The SphericalCustom and Gnomonic are defined
   // by an Orientation object giving its pole and the position angle of the coord
@@ -429,10 +443,12 @@ namespace astrometry {
     explicit SphericalCustom(const CartesianCustom& rhs, Matrix33& partials):
       SphericalCustomBase(rhs) {}
 
+#ifdef USE_YAML
     // Serialization
     virtual void serialize(YAML::Emitter& os) const;
     static string type() {return "CustomPole";}
     static SphericalCoords* create(const YAML::Node& node);
+#endif
   };
 
   // The Gnomonic class is gnomonic projection at specified orientation.
@@ -484,10 +500,12 @@ namespace astrometry {
     virtual Matrix23 derivsTo2d() const;
     virtual Matrix32 derivsFrom2d() const;
 
+#ifdef USE_YAML
     // Serialization
     virtual void serialize(YAML::Emitter& os) const;
     static string type() {return "Gnomonic";}
     static SphericalCoords* create(const YAML::Node& node);
+#endif
   };
 
 

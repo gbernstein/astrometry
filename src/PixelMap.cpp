@@ -172,6 +172,7 @@ ReprojectionMap::dPixdWorld(double xworld, double yworld, double color) const {
   return m;
 }
 
+#ifdef USE_YAML
 PixelMap*
 ReprojectionMap::create(const YAML::Node& node,
 			bool& defaulted,
@@ -207,6 +208,7 @@ ReprojectionMap::write(YAML::Emitter& os) const {
      << YAML::Value << scaleFactor
      << YAML::EndMap;
 }
+#endif
 
 ///////////////////////////////////////////////////////////////////
 // Color term calculations
@@ -280,6 +282,7 @@ ColorTerm::toPixDerivs( double xworld, double yworld,
   derivs *= c;
 }
 
+#ifdef USE_YAML
 void
 ColorTerm::write(YAML::Emitter& os) const {
   os << YAML::BeginMap
@@ -310,3 +313,4 @@ ConstantMap::create(const YAML::Node& node,
     return new ConstantMap(name);
   }
 }
+#endif

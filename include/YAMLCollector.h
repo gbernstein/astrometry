@@ -2,6 +2,7 @@
 // serialized collections. 
 #ifndef YAMLCOLLECTOR_H
 #define YAMLCOLLECTOR_H
+#ifdef USE_YAML // Only have this class with YAML
 
 #include "Std.h"
 #include "Astrometry.h"
@@ -99,4 +100,5 @@ namespace astrometry {
 } // end namespace astrometry
 
 
+#endif  // USE_YAML
 #endif  // YAMLCOLLECTOR_H

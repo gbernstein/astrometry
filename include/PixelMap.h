@@ -14,11 +14,12 @@
 
 #include <string>
 #include <iostream>
+#ifdef USE_YAML
 #include "yaml-cpp/yaml.h"
+#endif
 #include "Std.h"
 #include "LinearAlgebra.h"
 #include "Astrometry.h"
-
 // Note that Astrometry.h has typdefs for the 2- and 3-element small vectors & matrices
 
 namespace astrometry {
@@ -81,7 +82,9 @@ namespace astrometry {
     // For serialization:  the precision is going to be a suggestion to derived
     // classes about number of digits to use in outputs.
     static const int DEFAULT_PRECISION=8;
+#ifdef USE_YAML
     virtual void write(YAML::Emitter& os) const =0;
+#endif
     string getName() const {return name;}
     virtual string getType() const {return "None";}
     
@@ -103,11 +106,13 @@ namespace astrometry {
     }
   };
 
+#ifdef USE_YAML
   inline YAML::Emitter& operator<<(YAML::Emitter& os, const PixelMap& pm) {
     pm.write(os);
     return os;
   }
-
+#endif
+  
   class IdentityMap: public PixelMap {
   public:
     IdentityMap(string name_="Identity"): PixelMap(name_) {}
@@ -123,6 +128,7 @@ namespace astrometry {
 			double color=astrometry::NODATA) const;    
     Matrix22 dWorlddPix(double xpix, double ypix, 
 			double color=astrometry::NODATA) const;    
+#ifdef USE_YAML
     static PixelMap* create(const YAML::Node& node,
 			    bool& defaulted,
 			    string name_="") {
@@ -132,6 +138,7 @@ namespace astrometry {
       os << YAML::BeginMap << YAML::Key << "Type" << YAML::Value << type()
 	 << YAML::EndMap;
     }
+#endif
   };
 
   class ConstantMap: public PixelMap {
@@ -186,6 +193,7 @@ namespace astrometry {
       derivs.setToIdentity();
     }
   
+#ifdef USE_YAML
     static PixelMap* create(const YAML::Node& node,
 			    bool& defaulted,
 			    string name_="");
@@ -196,7 +204,7 @@ namespace astrometry {
 	 << YAML::Key << "Parameters" << YAML::Flow << YAML::Value << vv
 	 << YAML::EndMap;
     }
-    
+#endif    
       
   private:
     DVector dxy;
@@ -241,10 +249,12 @@ namespace astrometry {
 			double color=astrometry::NODATA) const;    
 
     static string type() {return "Reprojection";}
+#ifdef USE_YAML
     static PixelMap* create(const YAML::Node& node,
 			    bool& defaulted,
 			    string name="");
     virtual void write(YAML::Emitter& os) const;
+#endif
     virtual string getType() const {return type();}
   private:
     SphericalCoords* pix;
@@ -274,8 +284,9 @@ namespace astrometry {
     virtual bool needsColor() const {return true;}
     // Will not have Create() call since color maps will be built by PixelMapCollection.
     // But for some convenience, provide a separate serialization.
+#ifdef USE_YAML
     virtual void write(YAML::Emitter& os) const;
-
+#endif
     virtual void setParams(const DVector& p) {pm->setParams(p);}
     virtual DVector getParams() const {return pm->getParams();}
     virtual int nParams() const {return pm->nParams();}

@@ -331,6 +331,7 @@ PiecewiseMap::toPixDerivs(double xworld, double yworld,
 ////////////////////////////////////////////////////////////////////////////////////
 // YAML (de-)serialization
 ////////////////////////////////////////////////////////////////////////////////////
+#ifdef USE_YAML
 
 void
 PiecewiseMap::write(YAML::Emitter& os) const {
@@ -417,3 +418,5 @@ PiecewiseMap::create(const YAML::Node& node,
     throw AstrometryError("PiecewiseMap needs either Parameters or ArgEnd in YAML input");
   }
 }
+
+#endif
