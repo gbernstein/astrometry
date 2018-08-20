@@ -779,7 +779,13 @@ namespace astrometry {
     partials = partial23 * rhs.derivsFrom2d();
   }
 
-  
+  Matrix22
+  SphericalCoords::convertWithCovariance(const SphericalCoords& rhs,
+					 const Matrix22& cov) {
+    Matrix22 dThisdRHS;
+    convertFrom(rhs, dThisdRHS);
+    return dThisdRHS * cov * dThisdRHS.transpose();
+  }
   void
   SphericalICRS::convertFromICRS(const Vector3& xeq, 
 				     Matrix33* partials) {

@@ -185,8 +185,14 @@ namespace astrometry {
     void convertFrom(const SphericalCoords& rhs, Matrix23& partials);
     void convertFrom(const SphericalCoords& rhs, Matrix22& partials);
 
+    // Convert from rhs coordinates, and also return
+    // covariance (orginally in rhs coord system) into this system
+    Matrix22 convertWithCovariance(const SphericalCoords& rhs,
+				   const Matrix22& cov);
+
     // Return great-circle distance (radians) from another point
     double distance(const SphericalCoords& rhs) const;
+
 
   private:
 #ifdef USE_YAML
@@ -389,6 +395,7 @@ namespace astrometry {
     virtual Vector3 convertToICRS(Matrix33* partials=0) const;
     virtual void convertFromICRS(const Vector3& xeq, Matrix33* partials=0);
   public:
+    SphericalCustomBase(): orient(nullptr), ownOrient(false) {}
     SphericalCustomBase(const Orientation& o, bool shareOrient);
     SphericalCustomBase(double xi, double eta, const Orientation& o, bool shareOrient) ;
     virtual ~SphericalCustomBase() {if (ownOrient) delete orient;}
@@ -458,6 +465,7 @@ namespace astrometry {
   // Gnomonic project is valid only on the hemisphere nearest the pole.
   class Gnomonic: public SphericalCustomBase {
   public:
+    Gnomonic() =default;
     Gnomonic(const Orientation& o, bool shareOrient=false):
       SphericalCustomBase(o, shareOrient) {}
     Gnomonic(double xi, double eta, const Orientation& o, bool shareOrient=false):
