@@ -198,7 +198,7 @@ YAMLCollector::addMap(string name, const Dictionary& dict) {
 
 bool
 YAMLCollector::removeMap(string name) {
-  out.erase(name);
+  return out.erase(name)>0; // Return true if anything was erased
 }
 
 void
