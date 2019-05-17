@@ -85,6 +85,8 @@ namespace astrometry {
     void getYMDHMS(int& y_, int& m_, int& d, 
 		   int& h, int& mn, double& s) const;
 
+    // Return TT = approximate TDB in years since J2000 - use Ephemeris routines for exact.
+    double getTTyr() const {return (getJD()-JD2000)*DAY - TTminusUTC(getJD());}
 
     // All of the time intervals use units from AstronomicalConstants.h,
     // which are YEAR.
