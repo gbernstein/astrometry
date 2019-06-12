@@ -15,7 +15,7 @@ namespace astrometry {
   // function to give difference between TT (dynamical) time and UTC:
   double
   UT::TTminusUTC(double jd_) {
-    const double TTminusTAI=32.184*SECOND;
+    const double TTminusTAI=32.184*TIMESEC;
     return TTminusTAI + TAIminusUTC(jd_);
   }
       
