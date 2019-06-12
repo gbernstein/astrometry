@@ -10,6 +10,7 @@
 #define LEAPSECOND_H
 
 #include <vector>
+#include "AstronomicalConstants.h"
 namespace astrometry {
   double UT::TAIminusUTC(double jd_) {
     static std::vector<double> leapJD;
@@ -47,9 +48,9 @@ namespace astrometry {
       initialized = true;
     }
     for (int i=0; i<leapJD.size(); i++)
-      if (jd_>=leapJD[i]) return dT[i]*SECOND;
-    return dT.back()*SECOND;
-    // Note conversion to AstronomicalConstants.h units with SECONDS
+      if (jd_>=leapJD[i]) return dT[i]*TIMESEC;
+    return dT.back()*TIMESEC;
+    // Note conversion to AstronomicalConstants.h units with TIMESEC'S
   }
 } //namespace astrometry
 #endif
