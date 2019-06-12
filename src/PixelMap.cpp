@@ -28,7 +28,7 @@ PixelMap::pixelArea(double xpix, double ypix, double color) const {
 
 Matrix22
 PixelMap::dPixdWorld(double xworld, double yworld, double color) const {
-  double xpix, ypix;
+  double xpix=500., ypix=500.;
   toPix(xworld,yworld,xpix,ypix, color);
   return dWorlddPix(xpix,ypix,color).inverse();
 }
