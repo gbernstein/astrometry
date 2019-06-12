@@ -122,7 +122,8 @@ YAMLCollector::Replacer::process(string& src, int maxSubs) const {
 }
 
 bool
-YAMLCollector::addMap(string name, const Dictionary& dict) {
+YAMLCollector::addMap(string name, const Dictionary& dict,
+		      double* criticalTime) {
   // If we already have an output node with this name, just return success
 
   // Single thread only since count() may fail if out() is altered simultaneously?
@@ -180,7 +181,12 @@ YAMLCollector::addMap(string name, const Dictionary& dict) {
     // If multithreading, it's possible the node will have been created since
     // we checked that it's absent.  That should be harmless as it will be replaced
     // here with a fresh copy.
+    Stopwatch timer;
+    timer.start();
     out[name] = mapNode;
+    timer.stop();
+    if (criticalTime)
+      *criticalTime += timer;
   }
   if (mapNode["Type"].as<string>() == "Composite") {
     // If this node is a compound map, call recursively for all constituent elements

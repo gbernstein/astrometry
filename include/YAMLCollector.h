@@ -45,8 +45,10 @@ namespace astrometry {
     // a file of names with equal substitution count is indeterminate.
     // Substitution and name matching are case-insensitive of
     // of the keys in the Dictionary.
-    // Returns false if no match is found. 
-    bool addMap(string name, const Dictionary& dict=Dictionary());
+    // Returns false if no match is found.
+    // Adds time in non-multi-threaded parts of loop to criticalTime if it's given
+    bool addMap(string name, const Dictionary& dict=Dictionary(),
+		double* criticalTime=nullptr);
 
     // Remove node of this name:
     bool removeMap(string name);
