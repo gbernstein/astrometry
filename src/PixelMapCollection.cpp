@@ -1,5 +1,6 @@
 // Define all the PixelMapCollection routines.
 
+#include <set>
 #include "PixelMapCollection.h"
 #include "PolyMap.h"
 #include "StringStuff.h"
@@ -63,6 +64,30 @@ PixelMapCollection::~PixelMapCollection() {
       i.second.realization = 0;
     }
   }
+}
+
+void
+PixelMapCollection::removeMap(string mapName) {
+  auto it = mapElements.find(mapName);
+  if (it == mapElements.end())
+    return; // Do nothing if there is no such map
+  if (it->second.atom)
+    delete it->second.atom;
+  if (it->second.realization)
+    delete it->second.realization;
+  mapElements.erase(it);
+}
+
+void
+PixelMapCollection::removeWcs(string wcsName) {
+  auto it = wcsElements.find(wcsName);
+  if (it == wcsElements.end())
+    return; // Do nothing if there is no such wcs
+  if (it->second.nativeCoords)
+    delete it->second.nativeCoords;
+  if (it->second.realization)
+    delete it->second.realization;
+  wcsElements.erase(it);
 }
 
 //////////////////////////////////////////////////////////////
@@ -614,6 +639,62 @@ PixelMapCollection::checkCompleteness() const {
   }
 }
 
+void
+PixelMapCollection::invalidate(string wcsName) {
+  auto it = wcsElements.find(wcsName);
+  if (it==wcsElements.end()) return;
+  it->second.isValid = false;
+}
+
+template <class T>
+void
+set_subtract(std::set<T> s1, const std::set<T> s2) {
+  auto i1 = s1.begin();
+  auto i2 = s2.begin();
+  while(i1!=s1.end() && i2!=s2.end()) {
+    if (*i1 < *i2) {
+      i1++;
+    } else if (*i2 < *i1) {
+      i2++;
+    } else {
+      // Equality: remove from s1
+      i1 = s1.erase(i1);
+      i2++;
+    }
+  }
+}
+				       
+void
+PixelMapCollection::purgeInvalid() {
+  // Collect names of all maps that invalid WCS's use,
+  // and get rid of the WCS's themselves.
+  set<string> unneeded;
+  set<string> badWcs;
+  for (auto& i : wcsElements) {
+    if (i.second.isValid) continue;
+    badWcs.insert(i.first);
+    auto depend = dependencies(i.second.mapName);
+    unneeded.insert(depend.begin(), depend.end());
+  }
+  // Now go through all PixelMaps.  If they are
+  // not dependencies of the badWcs's, then
+  // we keep everything that they need.
+  for (auto& i : mapElements) {
+    if (unneeded.count(i.first)) continue; // It's a dependency of our WCS.
+    // If not part of a bad WCS, then it's part of a good one,
+    // and we want to keep everything in it.
+    set_subtract(unneeded, dependencies(i.first));
+  }
+  // Now kill all unneeded maps
+  for (auto s : unneeded)
+    removeMap(s);
+  // And wcs's too
+  for (auto s : badWcs)
+    removeWcs(s);
+
+  // Recalculate all parameter indices
+  rebuildParameterVector();
+}
 
 //////////////////////////////////////////////////////////////
 // YAML (De-) Serialization

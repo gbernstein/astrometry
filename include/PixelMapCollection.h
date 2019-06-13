@@ -148,6 +148,12 @@ namespace astrometry {
 		  bool rebuildIndices=true); 
     void learn(PixelMapCollection& source, bool duplicateNamesAreExceptions=false);
 
+    // Mark a WCS as invalid / unused
+    void invalidate(string wcsName);
+
+    // Purge all map elements that are only used by invalidated WCS's
+    void purgeInvalid();
+      
     // Define a new pixelMap that is compounding of a list of other PixelMaps.  Order
     // of the list is from pixel to world coordinates.
     void defineChain(string chainName, const list<string>& elements);
@@ -223,7 +229,7 @@ namespace astrometry {
     // a map of the second name.
     bool dependsOn(const string mapName, const string targetName) const;
 
-    // Return list of pointers to all map elements needed to fully specify the target.
+    // Return list of names of all map elements needed to fully specify the target.
     // Includes self.  Assumes no dependence cycles.
     set<string> dependencies(string mapName) const;
 
@@ -278,7 +284,8 @@ namespace astrometry {
       WcsElement(): nativeCoords(0), realization(0), wScale(DEGREE) {}
       WcsElement(const WcsElement& rhs): mapName(rhs.mapName), nativeCoords(0),
 					 realization(rhs.realization),
-					 wScale(rhs.wScale)    {
+					 wScale(rhs.wScale),
+					 isValid(true) {
 	if (rhs.nativeCoords) nativeCoords = rhs.nativeCoords->duplicate();
       }
       ~WcsElement() {if (nativeCoords) delete nativeCoords;}
@@ -287,11 +294,16 @@ namespace astrometry {
       SphericalCoords* nativeCoords;
       Wcs* realization;	// Pointer to realization if we've got it.
       double wScale;	// Scaling to apply to PixelMap world coords to get radians
+      bool isValid;
     private:
       void operator=(const MapElement& rhs); // hide assignment
     };
 
     map<string, WcsElement> wcsElements; // all known Wcs's, indexed by name.
+
+    // Remove knowledge of a particular map or WCS and its realization if it exists.
+    void removeMap(string mapName);
+    void removeWcs(string wcsName);  // Does NOT remove the map on which it's based.
 
     // **** Useful utilities: *****
 
