@@ -1,3 +1,4 @@
+
 // Define all the PixelMapCollection routines.
 
 #include <set>
@@ -47,21 +48,21 @@ PixelMapCollection::~PixelMapCollection() {
   for (auto& i : mapElements) {
     if (i.second.atom) {
       delete i.second.atom;
-      i.second.atom = 0;
+      i.second.atom = nullptr;
     }
     if (i.second.realization) {
       delete i.second.realization;
-      i.second.realization = 0;
+      i.second.realization = nullptr;
     }
   }
   for (auto& i : wcsElements) {
     if (i.second.nativeCoords) {
       delete i.second.nativeCoords;
-      i.second.nativeCoords = 0;
+      i.second.nativeCoords = nullptr;
     }
     if (i.second.realization) {
       delete i.second.realization;
-      i.second.realization = 0;
+      i.second.realization = nullptr;
     }
   }
 }
@@ -83,10 +84,14 @@ PixelMapCollection::removeWcs(string wcsName) {
   auto it = wcsElements.find(wcsName);
   if (it == wcsElements.end())
     return; // Do nothing if there is no such wcs
-  if (it->second.nativeCoords)
+  if (it->second.nativeCoords) {
     delete it->second.nativeCoords;
-  if (it->second.realization)
+    it->second.nativeCoords=nullptr;
+  }
+  if (it->second.realization) {
     delete it->second.realization;
+    it->second.realization = nullptr;
+  }
   wcsElements.erase(it);
 }
 
@@ -648,18 +653,18 @@ PixelMapCollection::invalidate(string wcsName) {
 
 template <class T>
 void
-set_subtract(std::set<T> s1, const std::set<T> s2) {
+set_subtract(std::set<T>& s1, const std::set<T> s2) {
   auto i1 = s1.begin();
   auto i2 = s2.begin();
   while(i1!=s1.end() && i2!=s2.end()) {
     if (*i1 < *i2) {
-      i1++;
+      ++i1;
     } else if (*i2 < *i1) {
-      i2++;
+      ++i2;
     } else {
       // Equality: remove from s1
       i1 = s1.erase(i1);
-      i2++;
+      ++i2;
     }
   }
 }
@@ -673,8 +678,16 @@ PixelMapCollection::purgeInvalid() {
   for (auto& i : wcsElements) {
     if (i.second.isValid) continue;
     badWcs.insert(i.first);
-    auto depend = dependencies(i.second.mapName);
-    unneeded.insert(depend.begin(), depend.end());
+    if (mapExists(i.first)) {
+      // The WCS is also a map, build the dependency from there
+      auto depend = dependencies(i.first);
+      unneeded.insert(depend.begin(), depend.end());
+    } else if (!i.second.mapName.empty() &&
+	       i.second.mapName!="Identity") {
+      // purge dependencies of the WCS's map
+      auto depend = dependencies(i.second.mapName);
+      unneeded.insert(depend.begin(), depend.end());
+    }
   }
   // Now go through all PixelMaps.  If they are
   // not dependencies of the badWcs's, then
@@ -686,11 +699,13 @@ PixelMapCollection::purgeInvalid() {
     set_subtract(unneeded, dependencies(i.first));
   }
   // Now kill all unneeded maps
-  for (auto s : unneeded)
+  for (auto s : unneeded) {
     removeMap(s);
+  }
   // And wcs's too
-  for (auto s : badWcs)
+  for (auto s : badWcs) {
     removeWcs(s);
+  }
 
   // Recalculate all parameter indices
   rebuildParameterVector();
