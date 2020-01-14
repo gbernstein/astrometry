@@ -354,7 +354,7 @@ namespace astrometry {
   private:
     SphericalICRS pole;
     double        zrot;
-    Matrix33     rMatrix;
+    Matrix33      rMatrix;
     void	  buildMatrix();
   };
 
@@ -657,6 +657,7 @@ namespace astrometry {
   // Defines a full Cartesian system and associated Spherical system:
   class ReferenceFrame {
   public:
+    EIGEN_NEW
     CartesianICRS origin;
     Orientation   orient;
     
